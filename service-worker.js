@@ -3,7 +3,7 @@
 // istantaneamente e resta utilizzabile offline. Le chiamate a Scryfall,
 // Firebase/Firestore e Cardmarket passano sempre dritte in rete: i dati e i
 // prezzi non vengono mai serviti da una cache vecchia.
-const CACHE_NAME = 'raccoglitore-mtg-shell-v38';
+const CACHE_NAME = 'raccoglitore-mtg-shell-v40';
 const SHELL_ASSETS = [
   './',
   './index.html',

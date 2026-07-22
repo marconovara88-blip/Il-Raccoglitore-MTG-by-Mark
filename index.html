@@ -492,6 +492,24 @@
   .deck-link-item .icon-btn{font-size:15px;}
   .deck-link-empty{color:var(--text-faint); font-size:12.5px; font-style:italic;}
 
+  /* Mazzi salvati (dentro "Gioca contro di me") */
+  .saved-decks-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:14px;
+  }
+  .saved-deck-tile{
+    background:var(--bg-panel); border:1px solid var(--border-soft); border-radius:8px;
+    padding:10px; display:flex; flex-direction:column; gap:6px;
+  }
+  .saved-deck-tile .sdt-thumb{
+    width:100%; aspect-ratio:5/7; border-radius:5px; background:var(--bg-elevated) center/cover no-repeat;
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+  }
+  .saved-deck-tile .sdt-thumb.no-image{color:var(--text-faint); font-size:11px; font-style:italic; text-align:center; padding:6px;}
+  .saved-deck-tile .sdt-name{font-weight:600; font-size:13px; line-height:1.3;}
+  .saved-deck-tile .sdt-count{font-family:var(--font-mono); font-size:11px; color:var(--text-faint);}
+  .saved-deck-tile .sdt-actions{display:flex; gap:6px; margin-top:2px;}
+  .saved-deck-tile .sdt-actions button{flex:1; font-size:11px; padding:5px 0;}
+
   /* Revisione carte scansionate in blocco */
   .scan-review-grid{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px;
@@ -827,7 +845,6 @@
       <button class="ghost" id="btn-scan-card">📷 Scansiona carta</button>
       <input type="file" accept="image/*" capture="environment" id="scan-input" style="display:none;">
       <button class="primary" id="btn-add-card">＋ Aggiungi carta</button>
-      <button class="ghost" id="btn-open-decks">🗂 Miei mazzi EDH</button>
       <button class="ghost" id="btn-open-game">🎮 Gioca contro di me</button>
     </div>
     <div class="row">
@@ -878,92 +895,29 @@
 
 <main id="main"></main>
 
-<section id="decks-section" style="display:none; padding:24px 32px;">
-  <button class="ghost" id="btn-back-to-collection" style="margin-bottom:18px;">← Torna al raccoglitore</button>
-
-  <div style="max-width:560px;">
-    <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 6px; color:var(--text);">🗂 Miei mazzi EDH</h2>
-    <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 20px; line-height:1.6;">
-      Collega il tuo profilo Moxfield per raggiungerlo in un tocco, e salva qui i link diretti ai tuoi mazzi Commander preferiti per aprirli al volo.
-    </p>
-
-    <div class="field">
-      <label>Il tuo username Moxfield</label>
-      <div class="field-row" style="align-items:center;">
-        <input type="text" id="moxfield-username" placeholder="es. marconovara88">
-        <button id="btn-save-moxfield-username" class="primary" style="flex:0 0 auto;">Salva</button>
-      </div>
-    </div>
-    <a id="moxfield-decks-link" href="https://moxfield.com" target="_blank" rel="noopener"
-       style="display:block; text-align:center; margin:14px 0 28px; padding:12px; border-radius:6px; background:var(--accent); color:#1c1712; font-weight:700; text-decoration:none; font-size:13.5px;">
-      Apri tutti i miei mazzi su Moxfield ↗
-    </a>
-
-    <h3 style="font-family:var(--font-display); font-size:15px; color:var(--accent); margin:0 0 10px; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">
-      Collegamenti rapidi ai singoli mazzi
-    </h3>
-    <div id="deck-links-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;"></div>
-
-    <div class="field-row">
-      <div class="field">
-        <label>Nome mazzo</label>
-        <input type="text" id="new-deck-name" placeholder="es. Atraxa, Prassi Sconfinata">
-      </div>
-      <div class="field">
-        <label>Link Moxfield del mazzo</label>
-        <input type="text" id="new-deck-url" placeholder="https://moxfield.com/decks/...">
-      </div>
-    </div>
-    <button id="btn-add-deck-link" class="primary">+ Aggiungi mazzo</button>
-  </div>
-</section>
-
 <section id="game-section" style="display:none; padding:24px 32px;">
   <button class="ghost" id="btn-back-from-game" style="margin-bottom:18px;">← Torna al raccoglitore</button>
 
-  <!-- Schermata di impostazione partita -->
-  <div id="game-setup" style="max-width:560px;">
+  <!-- Home: mazzi salvati + avvio partita -->
+  <div id="game-home" style="max-width:760px;">
     <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 6px; color:var(--text);">🎮 Gioca contro di me</h2>
-    <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 20px; line-height:1.6;">
-      Scegli come costruire un mazzo per te e uno per me. Io gioco i miei turni descrivendoli qui in chat: tu rifletti le mie mosse sul tavolo condiviso.
+    <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 18px; line-height:1.6;">
+      Costruisci e salva i tuoi mazzi una volta sola usando le carte della tua collezione: la prossima volta li ritrovi qui, pronti da usare. Io gioco i miei turni descrivendoli in chat: tu rifletti le mie mosse sul tavolo condiviso.
     </p>
-    <p class="bulk-help" style="margin-bottom:18px;">
-      Consigliato: <strong>"Scegli dalla tua collezione"</strong> — usa le carte già presenti nel raccoglitore, senza bisogno di alcuna connessione a Moxfield o Scryfall (funziona sempre, anche offline). Puoi filtrare per tipo (creatura, terra, istantaneo…), spuntare tutte le carte che vuoi e aggiungerle al mazzo in un colpo solo — utile per costruire un mazzo Commander da 100 carte senza cercarle una alla volta. Le altre due vie richiedono di contattare siti esterni e possono essere bloccate a seconda del browser o della rete.
-    </p>
-    <div class="field">
-      <label>Il tuo mazzo</label>
-      <button type="button" class="ghost" id="toggle-player-collection" style="font-size:11.5px;">🗂 Scegli dalla tua collezione</button>
-      <div id="player-collection-block" style="display:none; margin-top:8px;">
-        <div class="filters" id="player-collection-typefilter" style="margin-bottom:6px;"></div>
-        <input type="text" id="player-collection-search" placeholder="Filtra per nome (facoltativo)…">
-        <div id="player-collection-suggestions" class="autocomplete-list-inline autocomplete-list-checkbox"></div>
-        <button type="button" class="primary" id="player-collection-addselected" style="margin-top:6px; display:none;">+ Aggiungi selezionate (<span id="player-collection-selcount">0</span>)</button>
-        <div id="player-collection-picked" class="picked-cards-list"></div>
+    <button class="primary" id="btn-new-deck" style="margin-bottom:14px;">+ Nuovo mazzo</button>
+    <div id="saved-decks-grid" class="saved-decks-grid"></div>
+
+    <h3 style="font-family:var(--font-display); font-size:15px; color:var(--accent); margin:26px 0 12px; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">
+      Inizia partita
+    </h3>
+    <div class="field-row">
+      <div class="field">
+        <label>Il tuo mazzo</label>
+        <select id="game-player-deck-select"><option value="">— scegli un mazzo salvato —</option></select>
       </div>
-      <select id="game-player-deck" style="margin-top:8px;"><option value="">— oppure un mazzo salvato (link Moxfield) —</option></select>
-      <input type="text" id="game-player-deck-manual" placeholder="oppure incolla qui un link Moxfield" style="margin-top:6px;">
-      <button type="button" class="ghost" id="toggle-player-paste" style="margin-top:8px; font-size:11.5px;">Il link non funziona? Incolla la lista carte</button>
-      <div id="player-paste-block" style="display:none; margin-top:8px;">
-        <textarea id="game-player-decklist" style="min-height:100px;" placeholder="Incolla qui l'export testuale del mazzo (una carta per riga, es. 1 Sol Ring)"></textarea>
-        <input type="text" id="game-player-commander" placeholder="Nome del comandante (facoltativo)" style="margin-top:6px;">
-      </div>
-    </div>
-    <div class="field">
-      <label>Il mio mazzo (Claude)</label>
-      <button type="button" class="ghost" id="toggle-claude-collection" style="font-size:11.5px;">🗂 Scegli dalla tua collezione</button>
-      <div id="claude-collection-block" style="display:none; margin-top:8px;">
-        <div class="filters" id="claude-collection-typefilter" style="margin-bottom:6px;"></div>
-        <input type="text" id="claude-collection-search" placeholder="Filtra per nome (facoltativo)…">
-        <div id="claude-collection-suggestions" class="autocomplete-list-inline autocomplete-list-checkbox"></div>
-        <button type="button" class="primary" id="claude-collection-addselected" style="margin-top:6px; display:none;">+ Aggiungi selezionate (<span id="claude-collection-selcount">0</span>)</button>
-        <div id="claude-collection-picked" class="picked-cards-list"></div>
-      </div>
-      <select id="game-claude-deck" style="margin-top:8px;"><option value="">— oppure un mazzo salvato (link Moxfield) —</option></select>
-      <input type="text" id="game-claude-deck-manual" placeholder="oppure incolla qui un link Moxfield" style="margin-top:6px;">
-      <button type="button" class="ghost" id="toggle-claude-paste" style="margin-top:8px; font-size:11.5px;">Il link non funziona? Incolla la lista carte</button>
-      <div id="claude-paste-block" style="display:none; margin-top:8px;">
-        <textarea id="game-claude-decklist" style="min-height:100px;" placeholder="Incolla qui l'export testuale del mazzo (una carta per riga, es. 1 Sol Ring)"></textarea>
-        <input type="text" id="game-claude-commander" placeholder="Nome del comandante (facoltativo)" style="margin-top:6px;">
+      <div class="field">
+        <label>Il mio mazzo (Claude)</label>
+        <select id="game-claude-deck-select"><option value="">— scegli un mazzo salvato —</option></select>
       </div>
     </div>
     <div class="field" style="max-width:160px;">
@@ -972,6 +926,40 @@
     </div>
     <p id="game-setup-status" style="font-size:12.5px; color:var(--text-dim); min-height:20px;"></p>
     <button id="btn-start-game" class="primary">Pesca le mani di apertura</button>
+  </div>
+
+  <!-- Editor di un mazzo salvato -->
+  <div id="deck-editor" style="display:none; max-width:600px;">
+    <button class="ghost" id="btn-back-from-editor" style="margin-bottom:14px;">← Torna ai mazzi</button>
+    <div class="field">
+      <label>Nome del mazzo</label>
+      <input type="text" id="deck-editor-name" placeholder="es. Atraxa, Prassi Sconfinata">
+    </div>
+    <button type="button" class="ghost" id="toggle-editor-collection" style="font-size:11.5px;">🗂 Scegli dalla tua collezione</button>
+    <div id="editor-collection-block" style="display:none; margin-top:8px;">
+      <div class="filters" id="editor-collection-typefilter" style="margin-bottom:6px;"></div>
+      <input type="text" id="editor-collection-search" placeholder="Filtra per nome (facoltativo)…">
+      <div id="editor-collection-suggestions" class="autocomplete-list-inline autocomplete-list-checkbox"></div>
+      <button type="button" class="primary" id="editor-collection-addselected" style="margin-top:6px; display:none;">+ Aggiungi selezionate (<span id="editor-collection-selcount">0</span>)</button>
+    </div>
+    <button type="button" class="ghost" id="toggle-editor-paste" style="margin-top:8px; font-size:11.5px;">Oppure incolla una lista testuale</button>
+    <div id="editor-paste-block" style="display:none; margin-top:8px;">
+      <p class="bulk-help">Ogni carta viene cercata prima nella tua collezione (stessa carta, stessa immagine, zero errori): solo quelle che non possiedi vengono recuperate da Scryfall come riserva.</p>
+      <textarea id="deck-editor-decklist" style="min-height:90px;" placeholder="Incolla qui una lista di carte (una per riga, es. 1 Sol Ring)"></textarea>
+      <button type="button" class="ghost" id="btn-editor-parse-paste" style="margin-top:6px;">Aggiungi dalla lista</button>
+    </div>
+    <h3 style="font-family:var(--font-display); font-size:14px; color:var(--accent); margin:20px 0 10px; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">
+      Carte nel mazzo (<span id="deck-editor-count">0</span>)
+    </h3>
+    <div id="deck-editor-picked" class="picked-cards-list"></div>
+    <div class="modal-actions" style="margin-top:18px;">
+      <div class="left">
+        <button class="ghost danger" id="btn-delete-deck" style="display:none;">Elimina mazzo</button>
+      </div>
+      <div class="left">
+        <button class="primary" id="btn-save-deck">💾 Salva mazzo</button>
+      </div>
+    </div>
   </div>
 
   <!-- Tavolo di gioco -->
@@ -1293,8 +1281,7 @@
   }
 
   let cards = [];
-  let moxfieldUsername = '';
-  let deckLinks = [];
+  let savedGameDecks = []; // { id, name, cards:[{name, imageUrl, qty, isCommander}] }
   let displayMode = "list";   // 'list' | 'grid'
   let groupMode = "none";     // 'none' | 'set' | 'type' | 'price'
   let sortMode = "name";      // 'name' | 'price-desc' | 'price-asc'
@@ -1314,11 +1301,7 @@
 
   function uid(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
 
-  /* ---------------- Sezione "Miei mazzi EDH" ---------------- */
-  function moxfieldDecksUrl(username){
-    return `https://moxfield.com/users/${encodeURIComponent(username)}/decks`;
-  }
-
+  /* ---------------- Sezione "Gioca contro di me": mazzi salvati ---------------- */
   /* Link alle combo EDHREC per un dato comandante: le pagine combo di EDHREC
      seguono lo schema edhrec.com/combos/nome-comandante (minuscolo, accenti e
      punteggiatura rimossi, spazi sostituiti da trattini). */
@@ -1332,44 +1315,60 @@
     return `https://edhrec.com/combos/${slug}`;
   }
 
-  function renderDecksSection(){
-    const usernameInput = $('#moxfield-username');
-    if(usernameInput) usernameInput.value = moxfieldUsername || '';
-    const link = $('#moxfield-decks-link');
-    if(link) link.href = moxfieldUsername ? moxfieldDecksUrl(moxfieldUsername) : 'https://moxfield.com';
+  function findCommanderInDeck(deck){
+    return deck.cards.find(c => c.isCommander) || null;
+  }
 
-    const list = $('#deck-links-list');
-    if(!list) return;
-    if(deckLinks.length === 0){
-      list.innerHTML = `<div class="deck-link-empty">Non hai ancora salvato collegamenti a mazzi. Aggiungine uno qui sotto.</div>`;
+  function renderSavedDecksGrid(){
+    const grid = $('#saved-decks-grid');
+    if(!grid) return;
+    if(savedGameDecks.length === 0){
+      grid.innerHTML = `<div class="deck-link-empty">Non hai ancora salvato nessun mazzo. Crea il primo con "+ Nuovo mazzo".</div>`;
       return;
     }
-    list.innerHTML = deckLinks.map(d => `
-      <div class="deck-link-item" data-id="${d.id}">
-        <a href="${escapeAttr(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.name)} ↗</a>
-        <a href="${edhrecCombosLink(d.name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per questo comandante (basato sul nome del mazzo)">🔗 Combo</a>
-        <button class="icon-btn" data-action="delete-deck" title="Rimuovi">✕</button>
-      </div>`).join('');
-    list.querySelectorAll('[data-action="delete-deck"]').forEach(btn=>{
-      btn.addEventListener('click', (e)=>{
-        const id = e.target.closest('[data-id]').dataset.id;
-        deckLinks = deckLinks.filter(d => d.id !== id);
-        scheduleSave(); renderDecksSection();
+    grid.innerHTML = savedGameDecks.map(d=>{
+      const cmd = findCommanderInDeck(d);
+      const count = d.cards.reduce((s,c)=> s + (c.qty||1), 0);
+      const thumb = cmd && cmd.imageUrl
+        ? `<div class="sdt-thumb" style="background-image:url('${escapeAttr(cmd.imageUrl)}')"></div>`
+        : `<div class="sdt-thumb no-image">${cmd ? escapeHtml(cmd.name) : 'nessun comandante'}</div>`;
+      return `<div class="saved-deck-tile" data-id="${d.id}">
+        ${thumb}
+        <div class="sdt-name">${escapeHtml(d.name)}</div>
+        <div class="sdt-count">${count} carte</div>
+        ${cmd ? `<a href="${edhrecCombosLink(cmd.name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per ${escapeAttr(cmd.name)}">🔗 Combo</a>` : ''}
+        <div class="sdt-actions">
+          <button data-action="edit">✎ Modifica</button>
+          <button data-action="delete">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('.saved-deck-tile').forEach(tile=>{
+      const id = tile.dataset.id;
+      tile.querySelector('[data-action="edit"]').addEventListener('click', ()=> openDeckEditor(id));
+      tile.querySelector('[data-action="delete"]').addEventListener('click', ()=>{
+        const deck = savedGameDecks.find(d=>d.id===id);
+        if(!deck) return;
+        if(!confirm(`Eliminare il mazzo "${deck.name}"?`)) return;
+        savedGameDecks = savedGameDecks.filter(d=>d.id!==id);
+        scheduleSave(); renderSavedDecksGrid(); populateGameDeckSelects();
       });
     });
   }
 
-  function openDecksSection(){
-    $('#toolbar').style.display = 'none';
-    $('#main').style.display = 'none';
-    $('#game-section').style.display = 'none';
-    $('#decks-section').style.display = 'block';
-    renderDecksSection();
+  function populateGameDeckSelects(){
+    const opts = `<option value="">— scegli un mazzo salvato —</option>` +
+      savedGameDecks.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+    $('#game-player-deck-select').innerHTML = opts;
+    $('#game-claude-deck-select').innerHTML = opts;
   }
-  function closeDecksSection(){
-    $('#decks-section').style.display = 'none';
-    $('#toolbar').style.display = '';
-    $('#main').style.display = '';
+
+  function openGameHome(){
+    $('#deck-editor').style.display = 'none';
+    $('#game-board').style.display = 'none';
+    $('#game-home').style.display = 'block';
+    renderSavedDecksGrid();
+    populateGameDeckSelects();
   }
 
   /* ---------------- Tavolo di gioco ("Gioca contro di me") ----------------
@@ -1391,22 +1390,15 @@
     return arr;
   }
 
-  function populateGameDeckSelects(){
-    const opts = `<option value="">— oppure un mazzo salvato (link Moxfield) —</option>` +
-      deckLinks.map(d => `<option value="${escapeAttr(d.url)}">${escapeHtml(d.name)}</option>`).join('');
-    $('#game-player-deck').innerHTML = opts;
-    $('#game-claude-deck').innerHTML = opts;
-  }
-
   /* ---------------- Costruzione mazzo dalla collezione (zero rete) ----------------
      Usa direttamente le carte già presenti nel raccoglitore: nessuna chiamata
      a Moxfield o Scryfall, quindi funziona sempre, anche offline o con
      restrizioni di rete. Il filtro per tipo + la selezione multipla rendono
      gestibile costruire un mazzo Commander da 100 carte, invece di dover
      cercare e aggiungere una carta alla volta. */
-  const gameDeckPicks = { player: [], claude: [] };
-  const collectionTypeFilters = { player: new Set(), claude: new Set() }; // vuoto = tutti i tipi
-  const collectionSelected = { player: new Map(), claude: new Map() }; // name -> {name, imageUrl}
+  const deckEditorPicks = { editor: [] };
+  const collectionTypeFilters = { editor: new Set() }; // vuoto = tutti i tipi
+  const collectionSelected = { editor: new Map() }; // name -> {name, imageUrl}
   const MAX_COLLECTION_ROWS = 60;
 
   function renderCollectionTypeFilter(prefix){
@@ -1494,7 +1486,7 @@
   }
 
   function addCardToDeckPick(prefix, name, imageUrl){
-    const picks = gameDeckPicks[prefix];
+    const picks = deckEditorPicks[prefix];
     const existing = picks.find(p => p.name.toLowerCase() === name.toLowerCase());
     if(existing){ existing.qty++; }
     else{ picks.push({ name, imageUrl: imageUrl||'', qty: 1, isCommander: false }); }
@@ -1502,9 +1494,11 @@
   }
 
   function renderDeckPicks(prefix){
-    const wrap = $(`#${prefix}-collection-picked`);
-    const picks = gameDeckPicks[prefix];
-    if(picks.length === 0){ wrap.innerHTML = ''; return; }
+    const wrap = $('#deck-editor-picked');
+    const countEl = $('#deck-editor-count');
+    const picks = deckEditorPicks[prefix];
+    if(countEl) countEl.textContent = picks.reduce((s,p)=> s + (p.qty||1), 0);
+    if(picks.length === 0){ wrap.innerHTML = `<div class="deck-link-empty">Nessuna carta ancora aggiunta a questo mazzo.</div>`; return; }
     wrap.innerHTML = picks.map((p, i) => `
       <div class="picked-card-row" data-idx="${i}">
         <span class="pc-name">${escapeHtml(p.name)}</span>
@@ -1527,86 +1521,13 @@
     });
   }
 
-  function buildDeckDataFromPicks(prefix){
-    const picks = gameDeckPicks[prefix];
-    const library = [];
-    const command = [];
-    picks.forEach(p=>{
-      for(let i=0;i<p.qty;i++){
-        const cardObj = { uid: uid(), name: p.name, imageUrl: p.imageUrl||'', tapped:false, isCommander: !!p.isCommander };
-        if(p.isCommander) command.push(cardObj);
-        else library.push(cardObj);
-      }
-    });
-    if(library.length === 0 && command.length === 0) throw new Error('Non hai scelto nessuna carta dalla collezione.');
-    return { library: shuffleArray(library), command };
-  }
-
   function setGameSetupStatus(text, isError){
     const el = $('#game-setup-status');
     if(el){ el.textContent = text || ''; el.style.color = isError ? '#e0958c' : 'var(--text-dim)'; }
   }
 
-  function cardObjFrom(name, sc, isCommander){
-    const img = sc ? ((sc.image_uris && sc.image_uris.small) ||
-      (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.small) || '') : '';
-    return { uid: uid(), name, imageUrl: img, tapped: false, isCommander: !!isCommander };
-  }
+  let editingDeckId = null; // null = nuovo mazzo, altrimenti id del mazzo in modifica
 
-  /* Recupera un intero mazzo da Moxfield, separando automaticamente gli
-     eventuali comandanti (board "commanders" dell'API Moxfield) dal resto
-     della libreria, così la zona Comandante si popola da sola. */
-  /* Recupera le immagini da Scryfall per un elenco di nomi, ma senza mai far
-     fallire l'intero caricamento del mazzo: se questa chiamata ha problemi
-     di rete, la partita parte comunque con le carte senza immagine (si
-     possono comunque riconoscere dal nome, e leggerle poi su Scryfall). */
-  async function safeEnrichNames(names){
-    try{
-      return await fetchCardsByNames(names);
-    }catch(e){
-      return [];
-    }
-  }
-
-  async function loadDeckData(url){
-    const id = extractMoxfieldDeckId(url.trim());
-    if(!id) throw new Error('Link Moxfield non riconosciuto.');
-    let res;
-    try{
-      res = await fetch(`https://api2.moxfield.com/v3/decks/all/${id}`);
-    }catch(networkErr){
-      throw new Error('Impossibile contattare Moxfield dal browser (probabile blocco CORS del sito). Usa "Incolla la lista carte" qui sopra.');
-    }
-    if(!res.ok) throw new Error('Mazzo non trovato o non pubblico (risposta ' + res.status + ' da Moxfield).');
-    const data = await res.json();
-    const mainBoard = data.mainboard || {};
-    const cmdBoard = data.commanders || {};
-    const mainEntries = Object.values(mainBoard);
-    const cmdEntries = Object.values(cmdBoard);
-    if(mainEntries.length === 0 && cmdEntries.length === 0) throw new Error('Il mazzo risulta vuoto.');
-
-    const mainNames = [];
-    mainEntries.forEach(entry=>{
-      const n = (entry.card && entry.card.name) || entry.name;
-      if(!n) return;
-      const qty = entry.quantity || 1;
-      for(let i=0;i<qty;i++) mainNames.push(n);
-    });
-    const cmdNames = cmdEntries.map(entry => (entry.card && entry.card.name) || entry.name).filter(Boolean);
-
-    const allUnique = Array.from(new Set([...mainNames, ...cmdNames]));
-    const cardObjs = await safeEnrichNames(allUnique);
-    const byName = {};
-    cardObjs.forEach(c=>{ if(c) byName[c.name.toLowerCase()] = c; });
-
-    const library = shuffleArray(mainNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], false)));
-    const command = cmdNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], true));
-    return { library, command };
-  }
-
-  /* Percorso alternativo, senza passare da Moxfield: l'utente incolla
-     l'export testuale del mazzo (Moxfield → ⋯ → Export → Text). Usa solo
-     Scryfall per arricchire le carte (in modo opzionale, vedi sopra) —
   const DECKLIST_HEADER_WORDS = new Set(['deck','main deck','mainboard','commander','commanders','sideboard','maybeboard','companion']);
 
   function parseDecklistText(text){
@@ -1620,53 +1541,148 @@
       });
   }
 
-  async function loadDeckDataFromText(deckText, commanderText){
-    const deckLines = parseDecklistText(deckText);
-    const cmdLines = parseDecklistText(commanderText || '');
-    if(deckLines.length === 0 && cmdLines.length === 0) throw new Error('Lista carte vuota.');
+  /* Aggiunge al mazzo in modifica le carte di una lista testuale incollata
+     (es. esportata da un qualunque sito di deckbuilding): arricchite con
+     immagine tramite Scryfall, poi puoi comunque correggerle/segnare il
+     comandante dall'elenco sottostante, esattamente come per quelle scelte
+     dalla collezione. */
+  async function addPastedListToEditor(){
+    const text = $('#deck-editor-decklist').value.trim();
+    if(!text){ toast('Incolla prima una lista di carte.'); return; }
+    const btn = $('#btn-editor-parse-paste');
+    btn.disabled = true; btn.textContent = 'Elaborazione…';
+    try{
+      const lines = parseDecklistText(text);
+      const names = [];
+      lines.forEach(line=>{
+        const p = parseBulkLine(line);
+        if(p && p.name){ for(let i=0;i<(p.qty||1);i++) names.push(p.name); }
+      });
+      if(names.length === 0){ toast('Nessuna carta riconosciuta nella lista.'); return; }
 
-    const mainNames = [];
-    deckLines.forEach(line=>{
-      const p = parseBulkLine(line);
-      if(!p || !p.name) return;
-      for(let i=0;i<(p.qty||1);i++) mainNames.push(p.name);
+      // 1) prima cerca ogni carta nella TUA collezione: già verificata, con
+      //    l'immagine giusta, e zero chiamate di rete — la via più affidabile.
+      const localByName = {};
+      cards.forEach(c=>{ const k = c.name.toLowerCase(); if(!localByName[k]) localByName[k] = c; });
+
+      const missing = [];
+      names.forEach(n=>{ if(!localByName[n.toLowerCase()]) missing.push(n); });
+
+      // 2) solo per le carte che NON possiedi, un'unica richiesta di gruppo a
+      //    Scryfall come riserva (se la rete non risponde, si aggiungono comunque col solo nome).
+      let remoteByName = {};
+      if(missing.length > 0){
+        const uniqueMissing = Array.from(new Set(missing));
+        const cardObjs = await fetchCardsByNames(uniqueMissing).catch(()=>[]);
+        cardObjs.forEach(c=>{ if(c) remoteByName[c.name.toLowerCase()] = c; });
+      }
+
+      let fromCollection = 0, fromScryfall = 0, noImage = 0;
+      names.forEach(n=>{
+        const local = localByName[n.toLowerCase()];
+        if(local){
+          addCardToDeckPick('editor', local.name, local.imageUrl || '');
+          fromCollection++;
+          return;
+        }
+        const sc = remoteByName[n.toLowerCase()];
+        if(sc){
+          const img = (sc.image_uris && sc.image_uris.small) ||
+            (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.small) || '';
+          addCardToDeckPick('editor', sc.name, img);
+          fromScryfall++;
+        }else{
+          addCardToDeckPick('editor', n, ''); // aggiunta comunque, senza immagine: nessuna carta va persa
+          noImage++;
+        }
+      });
+
+      $('#deck-editor-decklist').value = '';
+      const parts = [];
+      if(fromCollection) parts.push(`${fromCollection} dalla tua collezione`);
+      if(fromScryfall) parts.push(`${fromScryfall} da Scryfall`);
+      if(noImage) parts.push(`${noImage} senza immagine (nome non riconosciuto)`);
+      toast(`Aggiunte ${names.length} carte (${parts.join(', ')}).`);
+    }catch(e){
+      toast('Non sono riuscito a leggere la lista.');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Aggiungi dalla lista';
+    }
+  }
+
+  function openDeckEditor(deckId){
+    editingDeckId = deckId || null;
+    $('#game-home').style.display = 'none';
+    $('#game-board').style.display = 'none';
+    $('#deck-editor').style.display = 'block';
+    collectionTypeFilters.editor.clear();
+    collectionSelected.editor.clear();
+    $('#editor-collection-search').value = '';
+    $('#editor-collection-block').style.display = 'none';
+    $('#editor-paste-block').style.display = 'none';
+    $('#deck-editor-decklist').value = '';
+    if(editingDeckId){
+      const deck = savedGameDecks.find(d => d.id === editingDeckId);
+      $('#deck-editor-name').value = deck ? deck.name : '';
+      deckEditorPicks.editor = deck ? deck.cards.map(c=>({...c})) : [];
+      $('#btn-delete-deck').style.display = 'inline-block';
+    }else{
+      $('#deck-editor-name').value = '';
+      deckEditorPicks.editor = [];
+      $('#btn-delete-deck').style.display = 'none';
+    }
+    renderDeckPicks('editor');
+  }
+
+  function closeDeckEditor(){
+    openGameHome();
+  }
+
+  function saveDeckFromEditor(){
+    const name = $('#deck-editor-name').value.trim();
+    if(!name){ toast('Dai un nome al mazzo.'); return; }
+    const picks = deckEditorPicks.editor;
+    if(picks.length === 0){ toast('Aggiungi almeno una carta al mazzo.'); return; }
+    const deckCards = picks.map(p => ({ name: p.name, imageUrl: p.imageUrl||'', qty: p.qty||1, isCommander: !!p.isCommander }));
+    if(editingDeckId){
+      const deck = savedGameDecks.find(d => d.id === editingDeckId);
+      if(deck){ deck.name = name; deck.cards = deckCards; }
+    }else{
+      savedGameDecks.push({ id: uid(), name, cards: deckCards });
+    }
+    scheduleSave();
+    toast('Mazzo salvato.');
+    closeDeckEditor();
+  }
+
+  function deleteDeckFromEditor(){
+    if(!editingDeckId) return;
+    const deck = savedGameDecks.find(d => d.id === editingDeckId);
+    if(!deck) return;
+    if(!confirm(`Eliminare il mazzo "${deck.name}"?`)) return;
+    savedGameDecks = savedGameDecks.filter(d => d.id !== editingDeckId);
+    scheduleSave();
+    closeDeckEditor();
+  }
+
+  /* Converte un mazzo salvato (nomi + quantità + comandante) in un vero
+     grimorio pronto per il tavolo di gioco: nessuna chiamata di rete, tutto
+     già disponibile in locale — le carte scelte dalla collezione avevano già
+     l'immagine, e restano valide per qualunque partita futura. */
+  function getSavedDeckData(deckId){
+    const deck = savedGameDecks.find(d => d.id === deckId);
+    if(!deck) throw new Error('Mazzo non trovato.');
+    const library = [];
+    const command = [];
+    deck.cards.forEach(p=>{
+      for(let i=0;i<(p.qty||1);i++){
+        const cardObj = { uid: uid(), name: p.name, imageUrl: p.imageUrl||'', tapped:false, isCommander: !!p.isCommander };
+        if(p.isCommander) command.push(cardObj);
+        else library.push(cardObj);
+      }
     });
-    const cmdNames = cmdLines.map(line=>{
-      const p = parseBulkLine(line);
-      return p ? p.name : line;
-    }).filter(Boolean);
-
-    const allUnique = Array.from(new Set([...mainNames, ...cmdNames]));
-    const cardObjs = await safeEnrichNames(allUnique);
-    const byName = {};
-    cardObjs.forEach(c=>{ if(c) byName[c.name.toLowerCase()] = c; });
-
-    const library = shuffleArray(mainNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], false)));
-    const command = cmdNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], true));
-    return { library, command };
-  }
-
-  /* Per ciascun lato: se è stata incollata una lista testuale, ha sempre la
-     priorità (è la via più affidabile); altrimenti tenta il link Moxfield. */
-  async function resolveDeckSide(prefix){
-    if(gameDeckPicks[prefix].length > 0){
-      return buildDeckDataFromPicks(prefix);
-    }
-    const pasteText = $(`#game-${prefix}-decklist`).value.trim();
-    if(pasteText){
-      const cmdText = $(`#game-${prefix}-commander`).value.trim();
-      return await loadDeckDataFromText(pasteText, cmdText);
-    }
-    const url = $(`#game-${prefix}-deck-manual`).value.trim() || $(`#game-${prefix}-deck`).value;
-    if(!url) throw new Error('Nessuna fonte indicata per questo mazzo.');
-    return await loadDeckData(url);
-  }
-
-  function hasDeckSource(prefix){
-    return gameDeckPicks[prefix].length > 0 ||
-      !!($(`#game-${prefix}-decklist`).value.trim() ||
-      $(`#game-${prefix}-deck-manual`).value.trim() ||
-      $(`#game-${prefix}-deck`).value);
+    if(library.length === 0 && command.length === 0) throw new Error('Il mazzo è vuoto.');
+    return { library: shuffleArray(library), command };
   }
 
   function makePlayerState(name, deckData, life){
@@ -1682,54 +1698,39 @@
     };
   }
 
-  async function startGame(){
-    if(!hasDeckSource('player') || !hasDeckSource('claude')){
-      setGameSetupStatus('Scegli un mazzo (o incolla una lista carte) per entrambi.', true);
+  function startGame(){
+    const playerDeckId = $('#game-player-deck-select').value;
+    const claudeDeckId = $('#game-claude-deck-select').value;
+    if(!playerDeckId || !claudeDeckId){
+      setGameSetupStatus('Scegli un mazzo salvato per entrambi.', true);
       return;
     }
-    const btn = $('#btn-start-game');
-    btn.disabled = true;
-    setGameSetupStatus('Preparo i due mazzi e pesco le mani di apertura…', false);
     try{
       const startLife = parseInt($('#game-start-life').value) || 40;
-      const results = await Promise.allSettled([
-        resolveDeckSide('player'),
-        resolveDeckSide('claude')
-      ]);
-      const [playerResult, claudeResult] = results;
-      const failures = [];
-      if(playerResult.status === 'rejected') failures.push(`Il tuo mazzo: ${playerResult.reason && playerResult.reason.message ? playerResult.reason.message : playerResult.reason}`);
-      if(claudeResult.status === 'rejected') failures.push(`Il mio mazzo (Claude): ${claudeResult.reason && claudeResult.reason.message ? claudeResult.reason.message : claudeResult.reason}`);
-      if(failures.length > 0){
-        setGameSetupStatus(failures.join(' — '), true);
-        return;
-      }
+      const playerData = getSavedDeckData(playerDeckId);
+      const claudeData = getSavedDeckData(claudeDeckId);
       gameState = {
-        player: makePlayerState('Tu', playerResult.value, startLife),
-        claude: makePlayerState('Claude', claudeResult.value, startLife),
+        player: makePlayerState('Tu', playerData, startLife),
+        claude: makePlayerState('Claude', claudeData, startLife),
         log: []
       };
       logEvent('La partita inizia. Mani di apertura pescate.');
-      resetTurnTimer('player', false);
-      $('#game-setup').style.display = 'none';
+      resetTurnTimer('player', true);
+      $('#game-home').style.display = 'none';
       $('#game-board').style.display = 'block';
       setGameSetupStatus('', false);
       renderGame();
       toast('Mani di apertura pescate. Buona partita!');
     }catch(e){
-      setGameSetupStatus('Errore imprevisto nella preparazione della partita: ' + (e && e.message ? e.message : e), true);
-    }finally{
-      btn.disabled = false;
+      setGameSetupStatus('Errore nella preparazione della partita: ' + (e && e.message ? e.message : e), true);
     }
   }
 
   function endGame(){
-    if(!confirm('Terminare la partita e tornare al raccoglitore?')) return;
+    if(!confirm('Terminare la partita e tornare ai mazzi?')) return;
     stopTurnTimer();
     gameState = null;
-    $('#game-board').style.display = 'none';
-    $('#game-setup').style.display = 'block';
-    setGameSetupStatus('', false);
+    openGameHome();
   }
 
   /* ---------- Timer delle mosse ----------
@@ -1842,7 +1843,7 @@
         <button data-act="toBattlefield" title="Gioca in campo">▶</button>
       </div>`;
     }
-    return `<div class="game-card ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
+    return `<div class="game-card hoverable ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" data-img="${escapeAttr(c.imageUrl||'')}" draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
   }
 
   function counterControl(side, key, icon, label){
@@ -1981,6 +1982,9 @@
             handleCardAction(side, zone, cuid, btn.dataset.act);
           });
         });
+        cardEl.addEventListener('mouseenter', showPreview);
+        cardEl.addEventListener('mousemove', movePreview);
+        cardEl.addEventListener('mouseleave', hidePreview);
         initCardDrag(cardEl);
       });
     });
@@ -2085,6 +2089,7 @@
       if(!dragCtx.moved && Math.hypot(dx,dy) < 8) return;
       if(!dragCtx.moved){
         dragCtx.moved = true;
+        hidePreview();
         const ghost = cardEl.cloneNode(true);
         ghost.classList.add('drag-ghost');
         ghost.querySelectorAll('.card-mini-actions').forEach(el=>el.remove());
@@ -2194,14 +2199,12 @@
         // oppure formato "classico" con i campi diretti nel documento (dati più vecchi)
         const data = (raw && typeof raw.data === 'string') ? JSON.parse(raw.data) : raw;
         cards = Array.isArray(data.cards) ? data.cards : [];
-        moxfieldUsername = data.moxfieldUsername || '';
-        deckLinks = Array.isArray(data.deckLinks) ? data.deckLinks : [];
+        savedGameDecks = Array.isArray(data.savedGameDecks) ? data.savedGameDecks : [];
       }else{
         const res = await window.storage.get('collection', false);
         const data = res && res.value ? JSON.parse(res.value) : {};
         cards = Array.isArray(data) ? data : (Array.isArray(data.cards) ? data.cards : []);
-        moxfieldUsername = (data && data.moxfieldUsername) || '';
-        deckLinks = (data && Array.isArray(data.deckLinks)) ? data.deckLinks : [];
+        savedGameDecks = (data && Array.isArray(data.savedGameDecks)) ? data.savedGameDecks : [];
       }
       updateSyncIndicator('ok');
     }catch(e){
@@ -2209,7 +2212,6 @@
       updateSyncIndicator('error', '⚠ Impossibile contattare il cloud');
       toast('Non riesco a verificare i dati salvati in precedenza. Se il raccoglitore era già popolato, ricarica la pagina prima di modificarlo per non rischiare di sovrascriverlo.', 7000);
     }
-    renderDecksSection();
     render();
     maybeAutoRefreshPrices();
   }
@@ -2231,9 +2233,9 @@
         // Firebase in background — è quello che permette all'aggiornamento
         // prezzi di proseguire anche ad app chiusa (vedi più sotto).
         await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc)
-          .set({ data: JSON.stringify({ cards, moxfieldUsername, deckLinks }), updatedAt: new Date().toISOString() });
+          .set({ data: JSON.stringify({ cards, savedGameDecks }), updatedAt: new Date().toISOString() });
       }else{
-        const res = await window.storage.set('collection', JSON.stringify({ cards, moxfieldUsername, deckLinks }), false);
+        const res = await window.storage.set('collection', JSON.stringify({ cards, savedGameDecks }), false);
         if(!res) throw new Error('empty response');
       }
       storageAvailable = true;
@@ -3494,7 +3496,6 @@
     closeScanOverlay();
     $('#toolbar').style.display = 'none';
     $('#main').style.display = 'none';
-    $('#decks-section').style.display = 'none';
     $('#game-section').style.display = 'none';
     $('#scan-review-section').style.display = 'block';
     renderScanReview();
@@ -3751,17 +3752,11 @@
   /* ---------------- Wire up events ---------------- */
   $('#btn-add-card').addEventListener('click', openAddModal);
 
-  $('#btn-open-decks').addEventListener('click', openDecksSection);
-  $('#btn-back-to-collection').addEventListener('click', closeDecksSection);
-
   function openGameSection(){
     $('#toolbar').style.display = 'none';
     $('#main').style.display = 'none';
-    $('#decks-section').style.display = 'none';
     $('#game-section').style.display = 'block';
-    populateGameDeckSelects();
-    renderDeckPicks('player');
-    renderDeckPicks('claude');
+    openGameHome();
   }
   function closeGameSection(){
     $('#game-section').style.display = 'none';
@@ -3771,49 +3766,26 @@
   $('#btn-open-game').addEventListener('click', openGameSection);
   $('#btn-back-from-game').addEventListener('click', closeGameSection);
   $('#btn-start-game').addEventListener('click', startGame);
-  $('#toggle-player-paste').addEventListener('click', ()=>{
-    const block = $('#player-paste-block');
-    block.style.display = block.style.display === 'none' ? 'block' : 'none';
-  });
-  $('#toggle-claude-paste').addEventListener('click', ()=>{
-    const block = $('#claude-paste-block');
-    block.style.display = block.style.display === 'none' ? 'block' : 'none';
-  });
-  $('#toggle-player-collection').addEventListener('click', ()=>{
-    const block = $('#player-collection-block');
+
+  $('#btn-new-deck').addEventListener('click', ()=> openDeckEditor(null));
+  $('#btn-back-from-editor').addEventListener('click', closeDeckEditor);
+  $('#btn-save-deck').addEventListener('click', saveDeckFromEditor);
+  $('#btn-delete-deck').addEventListener('click', deleteDeckFromEditor);
+  $('#btn-editor-parse-paste').addEventListener('click', addPastedListToEditor);
+
+  $('#toggle-editor-collection').addEventListener('click', ()=>{
+    const block = $('#editor-collection-block');
     const opening = block.style.display === 'none';
     block.style.display = opening ? 'block' : 'none';
-    if(opening) renderCollectionSuggestions('player', $('#player-collection-search').value);
+    if(opening) renderCollectionSuggestions('editor', $('#editor-collection-search').value);
   });
-  $('#toggle-claude-collection').addEventListener('click', ()=>{
-    const block = $('#claude-collection-block');
-    const opening = block.style.display === 'none';
-    block.style.display = opening ? 'block' : 'none';
-    if(opening) renderCollectionSuggestions('claude', $('#claude-collection-search').value);
+  $('#toggle-editor-paste').addEventListener('click', ()=>{
+    const block = $('#editor-paste-block');
+    block.style.display = block.style.display === 'none' ? 'block' : 'none';
   });
-  $('#player-collection-search').addEventListener('input', (e)=> renderCollectionSuggestions('player', e.target.value));
-  $('#claude-collection-search').addEventListener('input', (e)=> renderCollectionSuggestions('claude', e.target.value));
-  $('#player-collection-addselected').addEventListener('click', ()=> addSelectedToDeck('player'));
-  $('#claude-collection-addselected').addEventListener('click', ()=> addSelectedToDeck('claude'));
+  $('#editor-collection-search').addEventListener('input', (e)=> renderCollectionSuggestions('editor', e.target.value));
+  $('#editor-collection-addselected').addEventListener('click', ()=> addSelectedToDeck('editor'));
 
-  $('#btn-save-moxfield-username').addEventListener('click', ()=>{
-    const v = $('#moxfield-username').value.trim().replace(/^@/, '');
-    moxfieldUsername = v;
-    scheduleSave(); renderDecksSection();
-    toast(v ? 'Username Moxfield salvato.' : 'Username Moxfield rimosso.');
-  });
-
-  $('#btn-add-deck-link').addEventListener('click', ()=>{
-    const name = $('#new-deck-name').value.trim();
-    const url = $('#new-deck-url').value.trim();
-    if(!name || !url){ toast('Inserisci nome e link del mazzo.'); return; }
-    if(!/^https?:\/\//i.test(url)){ toast('Il link deve iniziare con https://'); return; }
-    deckLinks.push({ id: uid(), name, url });
-    $('#new-deck-name').value = '';
-    $('#new-deck-url').value = '';
-    scheduleSave(); renderDecksSection();
-    toast('Mazzo aggiunto.');
-  });
   /* I due pulsanti (quello in fondo e quello subito sotto "Aggiorna tutto")
      comandano lo stesso stato e restano sempre sincronizzati tra loro. */
   function setToolbarCollapsed(collapsed){
