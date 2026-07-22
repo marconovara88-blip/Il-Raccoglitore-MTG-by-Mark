@@ -1,0 +1,3706 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il Raccoglitore — Collezione Magic: The Gathering</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#181310">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Raccoglitore MTG">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#181310;
+    --bg-panel:#221b15;
+    --bg-elevated:#2c231b;
+    --bg-input:#150f0c;
+    --text:#ece1cc;
+    --text-dim:#a4937a;
+    --text-faint:#6e6151;
+    --border:#463a2b;
+    --border-soft:#33291e;
+    --accent:#c9a227;
+    --accent-dim:#8a7326;
+    --danger:#a4433b;
+
+    --rarity-common:#9aa3ad;
+    --rarity-uncommon:#a9c1d6;
+    --rarity-rare:#d4af37;
+    --rarity-mythic:#e8611c;
+    --rarity-token:#4fa98c;
+
+    --font-display:'Cinzel', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #241c14 0%, transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+
+  ::selection{background:var(--accent-dim); color:#fff;}
+
+  /* ---------- Header ---------- */
+  header{
+    padding:22px 32px 18px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    background-image:
+      linear-gradient(rgba(24,19,16,0.62), rgba(24,19,16,0.62)),
+      url('data:image/jpeg;base64,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');
+    background-size: cover, 600px 100%;
+    background-position: center, center;
+    background-repeat: no-repeat, no-repeat;
+  }
+  .title-block h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:28px;
+    letter-spacing:0.5px;
+    margin:0 0 4px;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .title-block h1 .gem{
+    width:14px;height:14px;
+    background:var(--accent);
+    transform:rotate(45deg);
+    box-shadow:0 0 10px rgba(201,162,39,0.6);
+    flex-shrink:0;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--text-dim);
+    font-size:13px;
+  }
+  .sync-status{
+    margin-top:8px;
+    font-size:11px;
+    font-family:var(--font-mono);
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    padding:3px 9px;
+    border-radius:20px;
+    border:1px solid var(--border);
+    color:var(--text-faint);
+  }
+  .sync-status.ok{color:#8fd3a8; border-color:#3a5540;}
+  .sync-status.saving{color:var(--accent); border-color:var(--accent-dim);}
+  .sync-status.error{color:#e0958c; border-color:#6b3a34;}
+  .stats{
+    display:flex;
+    gap:22px;
+    font-family:var(--font-mono);
+  }
+  .stat{text-align:right;}
+  .stat .num{font-size:20px; font-weight:700; color:var(--accent);}
+  .stat .lbl{font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-faint); display:block;}
+
+  /* ---------- Toolbar ---------- */
+  .app-topbar{
+    /* nessun posizionamento fisso: scorre via normalmente insieme al resto
+       della pagina, invece di restare agganciato in cima */
+  }
+  .toolbar{
+    padding:18px 32px 6px;
+    border-bottom:1px solid var(--border-soft);
+    background:var(--bg-panel);
+  }
+  .toolbar-collapse{
+    /* nessuno stile speciale: il contenitore è solo un wrapper strutturale */
+  }
+  .toolbar-content{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .toolbar.collapsed .toolbar-content{
+    display:none;
+  }
+  .toolbar-toggle{
+    display:block;
+    width:100%;
+    background:none;
+    border:none;
+    color:var(--text-faint);
+    font-size:11px;
+    letter-spacing:0.3px;
+    padding:8px 0 4px;
+    margin-top:2px;
+    cursor:pointer;
+    text-align:center;
+  }
+  .toolbar-toggle:hover{ color:var(--accent); }
+  .toolbar-toggle-mid{
+    width:auto;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    border-radius:20px;
+    padding:6px 16px;
+    font-weight:600;
+    font-size:11.5px;
+  }
+  .toolbar-toggle-mid:hover{ background:#2f2717; }
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+
+  input[type="text"], input[type="search"], input[type="number"], select, textarea{
+    background:var(--bg-input);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:4px;
+    padding:8px 10px;
+    font-family:var(--font-body);
+    font-size:13px;
+    outline:none;
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px var(--accent-dim);
+  }
+  input::placeholder{color:var(--text-faint);}
+
+  .import-bar{flex:1; min-width:260px;}
+  .search-bar{min-width:200px;}
+
+  button{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:12.5px;
+    border-radius:4px;
+    border:1px solid var(--border);
+    background:var(--bg-elevated);
+    color:var(--text);
+    padding:8px 14px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;
+    white-space:nowrap;
+  }
+  button:hover{border-color:var(--accent); color:var(--accent);}
+  button.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#1c1712;
+  }
+  button.primary:hover{background:#dbb43a; color:#1c1712;}
+  button.ghost{background:transparent;}
+  button.danger:hover{border-color:var(--danger); color:var(--danger);}
+  button.active{border-color:var(--accent); color:var(--accent); background:#2f2717;}
+  button:disabled{opacity:0.45; cursor:default;}
+  button:disabled:hover{border-color:var(--border); color:var(--text);}
+
+  .view-toggle, .filters{display:flex; gap:6px; flex-wrap:wrap;}
+
+  .chip{
+    font-size:11px;
+    padding:5px 10px;
+    border-radius:20px;
+    border:1px solid var(--border);
+    background:var(--bg-input);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color:var(--text-dim);
+  }
+  .chip .dot{width:8px; height:8px; border-radius:2px; transform:rotate(45deg);}
+  .chip.active{border-color:var(--accent); color:var(--text); background:#2f2717;}
+
+  #import-status{font-size:11.5px; color:var(--text-faint); padding:0 2px;}
+  #import-status.error{color:#d98c84;}
+  #import-status.ok{color:#8fd3a8;}
+
+  /* ---------- Main ---------- */
+  main{
+    padding:24px 32px;
+    position:relative;
+    background-image:
+      linear-gradient(rgba(24,19,16,0.93), rgba(24,19,16,0.93)),
+      url('data:image/jpeg;base64,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');
+    background-size: cover, 560px auto;
+    background-position: center top, center top;
+    background-attachment: scroll, scroll;
+    background-repeat: no-repeat, repeat-y;
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:80px 20px;
+    color:var(--text-faint);
+    border:1px dashed var(--border);
+    border-radius:8px;
+  }
+  .empty-state .gem-row{display:flex; justify-content:center; gap:6px; margin-bottom:18px;}
+  .empty-state .gem-row span{width:10px;height:10px;transform:rotate(45deg);}
+  .empty-state h3{font-family:var(--font-display); color:var(--text-dim); font-weight:500; margin:0 0 8px;}
+  .empty-state p{font-size:13px; max-width:360px; margin:0 auto;}
+
+  .group-header{
+    font-family:var(--font-display);
+    font-size:14px;
+    letter-spacing:0.5px;
+    color:var(--accent);
+    margin:28px 0 10px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--border-soft);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .group-header span.count{font-family:var(--font-mono); font-size:11px; color:var(--text-faint);}
+  .group-header:first-child{margin-top:0;}
+
+  /* ---------- List view ---------- */
+  .list-row{
+    display:grid;
+    grid-template-columns:6px 34px 1.6fr 100px 70px 60px 100px 130px 70px;
+    align-items:center;
+    gap:12px;
+    padding:9px 10px 9px 0;
+    border-bottom:1px solid var(--border-soft);
+    font-size:13px;
+  }
+  .list-row.header-row{
+    color:var(--text-faint);
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.8px;
+    border-bottom:1px solid var(--border);
+    padding-bottom:8px;
+  }
+  .list-row:hover:not(.header-row){background:rgba(255,255,255,0.02);}
+  .rarity-bar{width:6px; height:26px; border-radius:2px;}
+  .thumb{
+    display:block;
+    width:34px; height:47px;
+    border-radius:3px;
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    background-size:cover;
+    background-position:center;
+    cursor:pointer;
+    flex-shrink:0;
+    text-decoration:none;
+  }
+  .card-name{font-weight:600; cursor:default;}
+  .card-name .foil-tag{
+    font-size:9px; color:var(--accent); border:1px solid var(--accent-dim);
+    border-radius:3px; padding:1px 4px; margin-left:6px; vertical-align:middle;
+  }
+  .card-name .type-tag{
+    font-size:9px; color:var(--text-faint); border:1px solid var(--border);
+    border-radius:3px; padding:1px 4px; margin-left:6px; vertical-align:middle;
+    text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .set-cell{color:var(--text-dim); font-family:var(--font-mono); font-size:11.5px;}
+  .rarity-letter{
+    font-family:var(--font-mono); font-size:11px; font-weight:700;
+    width:20px;height:20px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);
+  }
+  .qty-cell{font-family:var(--font-mono); color:var(--text-dim);}
+  .price-cell{font-family:var(--font-mono); color:var(--text);}
+  .price-cell .stale{color:var(--text-faint); font-size:10px; display:block;}
+  .trend{font-size:10.5px; font-weight:700; margin-left:5px; padding:1px 5px; border-radius:3px;}
+  .trend.up{color:#8fd3a8; background:rgba(143,211,168,0.12);}
+  .trend.down{color:#e0958c; background:rgba(224,149,140,0.12);}
+  .actions-cell{display:flex; gap:6px; justify-content:flex-end;}
+  .icon-btn{
+    background:none; border:none; color:var(--text-faint); cursor:pointer;
+    font-size:14px; padding:2px 4px;
+  }
+  .icon-btn:hover{color:var(--accent);}
+  .icon-btn.needs-refresh{color:var(--rarity-mythic); animation:pulse-refresh 2s ease-in-out infinite;}
+  .icon-btn.needs-refresh:hover{color:var(--rarity-mythic); animation:none;}
+  @keyframes pulse-refresh{0%,100%{opacity:1;} 50%{opacity:0.45;}}
+  a.cm-link{color:var(--text-dim); text-decoration:none; font-size:15px;}
+  a.cm-link:hover{color:var(--accent);}
+
+  /* ---------- Grid view ---------- */
+  .grid-wrap{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:16px;
+  }
+  .card-tile{
+    background:var(--bg-panel);
+    border:1px solid var(--border-soft);
+    border-radius:8px;
+    padding:10px;
+    position:relative;
+    transition:border-color .15s, transform .15s;
+  }
+  .card-tile:hover{border-color:var(--accent-dim); transform:translateY(-2px);}
+  .card-tile .rarity-corner{
+    position:absolute; top:8px; left:8px;
+    width:10px; height:10px; transform:rotate(45deg);
+    box-shadow:0 0 6px rgba(0,0,0,0.5);
+  }
+  .tile-thumb{
+    display:block;
+    width:100%; aspect-ratio:5/7;
+    border-radius:5px;
+    background:var(--bg-elevated);
+    background-size:cover; background-position:center;
+    border:1px solid var(--border);
+    margin-bottom:8px;
+    cursor:pointer;
+    text-decoration:none;
+  }
+  .tile-name{font-weight:600; font-size:12.5px; line-height:1.3; margin-bottom:2px;}
+  .tile-set{font-family:var(--font-mono); font-size:10.5px; color:var(--text-faint); margin-bottom:6px;}
+  .tile-bottom{display:flex; justify-content:space-between; align-items:center;}
+  .tile-price{font-family:var(--font-mono); font-size:12px; color:var(--accent);}
+  .tile-actions{display:flex; gap:4px;}
+
+  /* ---------- Hover preview ---------- */
+  #hover-preview{
+    position:fixed;
+    pointer-events:none;
+    z-index:999;
+    width:220px;
+    border-radius:12px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,39,0.4);
+    display:none;
+    overflow:hidden;
+    background:#000;
+  }
+  #hover-preview img{width:100%; display:block;}
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,7,5,0.72);
+    display:none; align-items:center; justify-content:center; z-index:100;
+    padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    width:100%; max-width:520px;
+    max-height:88vh; overflow-y:auto;
+    padding:24px;
+  }
+  .modal h2{
+    font-family:var(--font-display); font-size:18px; margin:0 0 18px; color:var(--text);
+  }
+  .field{margin-bottom:12px; display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px;}
+  .field-row{display:flex; gap:10px;}
+  .field-row .field{flex:1;}
+  .field input, .field select, .field textarea{width:100%;}
+  .field textarea{resize:vertical; min-height:50px;}
+  .modal-actions{display:flex; justify-content:space-between; margin-top:18px; gap:10px;}
+  .modal-actions .left{display:flex; gap:8px;}
+
+  /* ---------- Autocomplete ---------- */
+  .autocomplete-wrap{position:relative; flex:1;}
+  .set-picker-wrap{position:relative;}
+  .set-picker-display{
+    width:100%; text-align:left;
+    background:var(--bg-input); border:1px solid var(--border); color:var(--text);
+    border-radius:4px; padding:8px 10px; font-family:var(--font-body); font-size:13px;
+    cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  .set-picker-display:hover{border-color:var(--accent); color:var(--text);}
+  .set-picker-display::after{content:'▾'; color:var(--text-faint); font-size:10px; flex-shrink:0;}
+  .autocomplete-list{
+    position:absolute;
+    top:calc(100% + 4px);
+    left:0; right:0;
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:6px;
+    max-height:260px;
+    overflow-y:auto;
+    z-index:50;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    display:none;
+  }
+  .autocomplete-list.show{display:block;}
+  .autocomplete-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:8px 10px;
+    cursor:pointer;
+    font-size:13px;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .autocomplete-item:last-child{border-bottom:none;}
+  .autocomplete-item:hover, .autocomplete-item.active{background:#3a2f22; color:var(--accent);}
+  .autocomplete-item .ac-thumb{
+    width:24px; height:33px; border-radius:3px; flex-shrink:0;
+    background:var(--bg-input) center/cover no-repeat;
+    border:1px solid var(--border);
+  }
+  .autocomplete-item .ac-meta{color:var(--text-faint); font-size:10.5px; font-family:var(--font-mono);}
+  .autocomplete-item.ac-loading, .autocomplete-item.ac-empty{
+    color:var(--text-faint); cursor:default; justify-content:center; font-style:italic;
+  }
+  .autocomplete-item.ac-loading:hover, .autocomplete-item.ac-empty:hover{background:none;}
+  .autocomplete-source{
+    font-size:9.5px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-faint);
+    padding:6px 10px 4px; border-bottom:1px solid var(--border-soft);
+  }
+  .ac-lang-tag{
+    font-size:9px; font-weight:700; color:#1c1712; background:var(--accent);
+    border-radius:3px; padding:1px 5px; margin-left:4px; vertical-align:middle;
+  }
+  .ac-en-name{ color:var(--text-faint); font-weight:400; font-size:11.5px; }
+
+  .bulk-help{font-size:11.5px; color:var(--text-faint); line-height:1.5; margin:0 0 10px;}
+  .bulk-help code{background:var(--bg-input); padding:1px 4px; border-radius:3px; color:var(--accent);}
+
+  .deck-link-item{
+    display:flex; align-items:center; gap:10px;
+    background:var(--bg-panel); border:1px solid var(--border-soft); border-radius:6px;
+    padding:10px 12px;
+  }
+  .deck-link-item a{
+    flex:1; color:var(--text); text-decoration:none; font-size:13.5px; font-weight:600;
+  }
+  .deck-link-item a:hover{color:var(--accent);}
+  .deck-combo-link{
+    flex:0 0 auto !important; font-size:11px !important; font-weight:400 !important;
+    color:var(--text-faint) !important; border:1px solid var(--border); border-radius:4px;
+    padding:3px 8px;
+  }
+  .deck-combo-link:hover{color:var(--accent) !important; border-color:var(--accent-dim);}
+  .deck-link-item .icon-btn{font-size:15px;}
+  .deck-link-empty{color:var(--text-faint); font-size:12.5px; font-style:italic;}
+
+  /* ---------- Tavolo di gioco ---------- */
+  #game-board{
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(58,44,26,0.55), transparent 62%),
+      linear-gradient(160deg, #2b2117 0%, #1a140e 55%, #120d09 100%);
+    border-radius:14px;
+    padding:16px;
+    border:1px solid #3a2c1a;
+  }
+  .player-panel{
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(15,60,42,0.35), transparent 60%),
+      linear-gradient(180deg, #16211a 0%, #101a14 100%);
+    border:1px solid #294432; border-radius:12px;
+    padding:16px; margin-bottom:16px;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.35);
+  }
+  .player-panel-header{
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid #294432;
+  }
+  .player-panel-header h3{
+    font-family:var(--font-display); font-size:16px; color:var(--accent); margin:0;
+    text-shadow:0 0 12px rgba(201,162,39,0.35);
+  }
+  .counters-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .life-control{display:flex; align-items:center; gap:8px;}
+  .life-control .life-num{
+    font-family:var(--font-mono); font-size:22px; font-weight:700; color:var(--text);
+    min-width:42px; text-align:center;
+  }
+  .life-control button{padding:4px 11px; font-size:15px;}
+  .counter-pill{
+    display:flex; align-items:center; gap:5px; background:rgba(0,0,0,0.28);
+    border:1px solid var(--border); border-radius:20px; padding:2px 6px;
+  }
+  .counter-pill .counter-icon{font-size:12px;}
+  .counter-pill .counter-num{font-family:var(--font-mono); font-size:13px; min-width:16px; text-align:center;}
+  .counter-pill button{padding:1px 7px; font-size:12px;}
+  .zone-row{display:flex; gap:14px; flex-wrap:wrap; margin-bottom:12px;}
+  .zone-block{flex:1; min-width:180px;}
+  .zone-title{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-faint);
+    margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; gap:8px;
+  }
+  .zone-cards{
+    display:flex; flex-wrap:wrap; gap:6px; min-height:56px; padding:6px;
+    border-radius:8px; transition:background .15s ease, box-shadow .15s ease;
+  }
+  .zone-cards.empty-zone::after{
+    content:'vuoto'; color:var(--text-faint); font-size:11px; font-style:italic; padding:16px 0;
+  }
+  .zone-cards.drop-target-hover, .library-stack.drop-target-hover, .graveyard-list.drop-target-hover{
+    background:rgba(201,162,39,0.12); box-shadow:0 0 0 1.5px var(--accent) inset;
+  }
+  .battlefield-zone{min-height:88px; background:rgba(0,0,0,0.15); border:1px dashed #33472e;}
+  .game-card{
+    position:relative; width:80px; height:112px; border-radius:6px; flex-shrink:0;
+    background:var(--bg-elevated) center/cover no-repeat; border:1px solid var(--border);
+    cursor:grab; transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    touch-action:none;
+  }
+  .game-card:hover{transform:translateY(-4px); box-shadow:0 6px 14px rgba(0,0,0,0.5), 0 0 0 1px var(--accent-dim);}
+  .game-card.tapped{transform:rotate(90deg); margin:0 16px;}
+  .game-card.tapped:hover{transform:rotate(90deg) translateY(-2px);}
+  .game-card.is-commander{box-shadow:0 0 0 2px var(--accent), 0 0 14px rgba(201,162,39,0.55);}
+  .game-card.is-token{
+    background:linear-gradient(160deg,#3a3226,#211c15);
+    border:1px dashed var(--accent-dim);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .token-label{font-size:10px; text-align:center; color:var(--accent); padding:4px; line-height:1.3;}
+  .game-card.attacking{
+    box-shadow:0 0 0 2px #e8611c, 0 0 16px rgba(232,97,28,0.7);
+    transform:translateY(-6px) rotate(-4deg);
+    animation:attackPulse 1s ease-in-out infinite;
+  }
+  @keyframes attackPulse{0%,100%{box-shadow:0 0 0 2px #e8611c, 0 0 10px rgba(232,97,28,0.55);} 50%{box-shadow:0 0 0 2px #ff7b38, 0 0 22px rgba(232,97,28,0.9);}}
+  .game-card.settle{animation:cardSettle .35s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes cardSettle{
+    0%{transform:scale(1.25) rotate(-6deg); box-shadow:0 0 22px rgba(201,162,39,0.8);}
+    60%{transform:scale(0.95) rotate(2deg);}
+    100%{transform:scale(1) rotate(0);}
+  }
+  .game-card.drag-source{opacity:0.3;}
+  .drag-ghost{
+    position:fixed; z-index:9999; pointer-events:none;
+    width:80px; height:112px; border-radius:6px;
+    background-size:cover; background-position:center;
+    box-shadow:0 12px 30px rgba(0,0,0,0.6), 0 0 0 2px var(--accent);
+    transform:scale(1.12) rotate(-3deg);
+    transition:none;
+  }
+  .game-card .card-mini-actions{
+    position:absolute; bottom:-2px; left:-2px; right:-2px;
+    display:flex; gap:2px; opacity:0; transition:opacity .12s ease; flex-wrap:wrap;
+  }
+  .game-card:hover .card-mini-actions{opacity:1;}
+  .game-card .card-mini-actions button{
+    flex:1 1 auto; min-width:18px; font-size:11px; padding:3px 0; border-radius:3px;
+    background:rgba(20,16,12,0.92); border:1px solid var(--border); color:var(--text);
+  }
+  .zone-count{font-family:var(--font-mono); color:var(--text-dim);}
+  .attack-declare-btn{color:#e8611c; border-color:#e8611c;}
+  .library-stack{
+    width:80px; height:112px; border-radius:6px;
+    background:
+      repeating-linear-gradient(135deg, rgba(201,162,39,0.06) 0 6px, transparent 6px 12px),
+      var(--bg-elevated);
+    border:1px solid var(--border); display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:4px; cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4), -2px -2px 0 -1px var(--bg-panel), -2px -2px 0 0 var(--border);
+    transition:transform .1s ease;
+  }
+  .library-stack:hover{transform:translateY(-2px);}
+  .library-stack .num{font-family:var(--font-mono); font-weight:700; font-size:16px; color:var(--accent);}
+  .library-stack .lbl{font-size:9px; color:var(--text-faint);}
+  .library-stack.pulse-once{animation:drawPulse .28s ease;}
+  .graveyard-list{display:none; flex-wrap:wrap; gap:6px; margin-top:8px; padding:6px; border-radius:8px;}
+  .graveyard-list.show{display:flex;}
+
+  .game-log-panel{
+    background:rgba(0,0,0,0.25); border:1px solid var(--border-soft); border-radius:10px;
+    padding:12px 14px; margin-bottom:16px;
+  }
+  .game-log-list{max-height:160px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:3px;}
+  .log-row{font-size:11.5px; color:var(--text-dim); line-height:1.5; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:2px;}
+
+  /* Costruzione mazzo dalla collezione (setup partita) */
+  .autocomplete-list-inline{
+    max-height:220px; overflow-y:auto; border:1px solid var(--border);
+    border-radius:6px; background:var(--bg-input); margin-top:4px;
+  }
+  .autocomplete-list-inline:empty{display:none; border:none;}
+  .autocomplete-list-inline .ac-row{
+    display:flex; align-items:center; gap:8px; padding:6px 8px; cursor:pointer;
+    border-bottom:1px solid var(--border-soft); font-size:12px;
+  }
+  .autocomplete-list-inline .ac-row:last-child{border-bottom:none;}
+  .autocomplete-list-inline .ac-row:hover{background:var(--bg-elevated); color:var(--accent);}
+  .autocomplete-list-inline .ac-row-thumb{
+    width:24px; height:33px; border-radius:3px; background:var(--bg-elevated) center/cover no-repeat;
+    border:1px solid var(--border); flex-shrink:0;
+  }
+  .autocomplete-list-checkbox{max-height:320px;}
+  .autocomplete-list-checkbox .ac-row{gap:10px;}
+  .autocomplete-list-checkbox .ac-row input[type="checkbox"]{
+    width:16px; height:16px; flex-shrink:0; accent-color:var(--accent); cursor:pointer;
+  }
+  .autocomplete-list-checkbox .ac-row.checked{background:#2f2717; color:var(--accent);}
+  .autocomplete-list-checkbox .ac-row-name{flex:1;}
+  .autocomplete-list-checkbox .ac-row-type{
+    font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.4px;
+  }
+  .ac-list-note{padding:6px 8px; font-size:10.5px; color:var(--text-faint); font-style:italic; border-bottom:1px solid var(--border-soft);}
+  .picked-cards-list{display:flex; flex-direction:column; gap:5px; margin-top:8px;}
+  .picked-card-row{
+    display:flex; align-items:center; gap:8px; background:var(--bg-elevated);
+    border:1px solid var(--border-soft); border-radius:6px; padding:5px 8px; font-size:12px;
+  }
+  .picked-card-row .pc-name{flex:1;}
+  .picked-card-row .pc-qty{
+    width:20px; text-align:center; font-family:var(--font-mono); color:var(--accent);
+  }
+  .picked-card-row button{padding:2px 7px; font-size:11px;}
+  .picked-card-row button.cmd-active{color:var(--accent); border-color:var(--accent);}
+
+  /* Timer delle mosse */
+  .turn-timer-bar{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    background:var(--bg-elevated); border:1px solid var(--border);
+    border-radius:8px; padding:10px 16px; margin-bottom:18px;
+  }
+  .turn-timer-bar .turn-label{font-size:12.5px; color:var(--text-dim);}
+  .turn-timer-bar .turn-label strong{color:var(--accent);}
+  .turn-timer-bar .turn-clock{
+    font-family:var(--font-mono); font-size:20px; font-weight:700; color:var(--text);
+    min-width:56px;
+  }
+  .turn-timer-bar .turn-clock.low{color:#e0958c; animation:clockPulse 1s ease-in-out infinite;}
+  @keyframes clockPulse{0%,100%{opacity:1;} 50%{opacity:0.4;}}
+
+  /* Animazioni carte */
+  .game-card{animation: cardEnter .22s ease;}
+  @keyframes cardEnter{
+    from{opacity:0; transform:scale(.75) translateY(6px);}
+    to{opacity:1; transform:scale(1) translateY(0);}
+  }
+  .game-card.tapped{transition:transform .15s ease;}
+  .life-num.life-pulse{animation: lifePulse .35s ease;}
+  @keyframes lifePulse{
+    0%{transform:scale(1); color:var(--text);}
+    40%{transform:scale(1.35); color:var(--accent);}
+    100%{transform:scale(1); color:var(--text);}
+  }
+  .library-stack{transition:transform .1s ease;}
+  .library-stack.pulse-once{animation: drawPulse .28s ease;}
+  @keyframes drawPulse{
+    0%{transform:scale(1);}
+    35%{transform:scale(.88) rotate(-3deg);}
+    100%{transform:scale(1);}
+  }
+
+
+  #toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--bg-elevated); border:1px solid var(--accent-dim);
+    color:var(--text); padding:10px 18px; border-radius:6px;
+    font-size:12.5px; z-index:200; display:none;
+  }
+
+  footer.note{
+    padding:18px 32px 0;
+    font-size:11px;
+    color:var(--text-faint);
+    line-height:1.6;
+    border-top:1px solid var(--border-soft);
+    margin-top:10px;
+  }
+
+  @media (max-width:760px){
+    header, .toolbar, main{padding-left:16px; padding-right:16px;}
+
+    /* Su schermi stretti, sottrarre 10cm fissi alla larghezza del logo
+       lascerebbe troppo poco spazio: qui la riduzione resta proporzionale. */
+    header{ background-size: cover, 340px 100%; }
+
+    /* Testo e controlli leggermente più grandi: più leggibili su schermi piccoli
+       e più facili da toccare con precisione. */
+    body{font-size:14.5px;}
+    button{padding:10px 14px; font-size:13.5px;}
+    .icon-btn{font-size:18px; padding:8px; min-width:38px; min-height:38px;}
+    input[type="text"], input[type="search"], input[type="number"], select, textarea{
+      font-size:15px; padding:11px 12px;
+    }
+    .chip{padding:8px 13px; font-size:12.5px;}
+    .import-bar{flex:1 1 100%;}
+
+    /* La riga di ogni carta diventa una piccola scheda a due righe invece di
+       tante colonne strette: niente più dati nascosti (prezzo/quantità
+       restavano invisibili prima), tutto leggibile senza scorrere di lato. */
+    .list-row{
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      column-gap:10px;
+      row-gap:7px;
+      padding:12px 8px;
+    }
+    .list-row.header-row{display:none;}
+    .list-row .rarity-bar{order:0; width:5px; align-self:stretch; height:auto; border-radius:3px;}
+    .list-row .thumb{order:1; width:50px; height:69px;}
+    .list-row .card-name{order:2; flex:1 1 auto; font-size:15px;}
+    .list-row .set-cell{
+      order:3; flex-basis:100%;
+      font-size:11.5px; color:var(--text-dim); background:var(--bg-elevated);
+      display:inline-block; width:fit-content; padding:3px 8px; border-radius:5px;
+    }
+    .list-row .rarity-cell{order:4;}
+    .list-row .qty-cell{
+      order:5; font-size:12.5px; background:var(--bg-elevated);
+      padding:3px 8px; border-radius:5px;
+    }
+    .list-row .price-cell{order:6; font-size:14px; font-weight:600;}
+    .list-row .market-cell{order:7;}
+    .list-row .actions-cell{order:8; margin-left:auto; gap:12px;}
+
+    /* Griglia: due colonne comode invece di tante minuscole */
+    .grid-wrap{grid-template-columns:repeat(2, 1fr); gap:12px;}
+
+    /* Modulo di aggiunta/modifica: campi impilati e più comodi da compilare */
+    .modal{padding:18px; max-height:92vh;}
+    .field-row{flex-direction:column; gap:12px;}
+  }
+
+  @media (max-width:420px){
+    header{flex-direction:column; align-items:flex-start; gap:12px;}
+    .stats{width:100%; justify-content:space-between; gap:8px;}
+    .title-block h1{font-size:24px;}
+  }
+
+  /* Su schermo largo/orizzontale (tablet o telefono ruotato) la griglia
+     approfitta dello spazio extra mostrando più carte per riga. */
+  @media (min-width:761px) and (orientation:landscape){
+    .grid-wrap{grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+<header>
+  <div class="title-block">
+    <h1><span class="gem"></span>Il Raccoglitore</h1>
+    <p>Catalogo della collezione — Magic: The Gathering</p>
+    <div id="sync-status" class="sync-status ok">☁ Tutto salvato</div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span id="stat-total" class="num">0</span><span class="lbl">Carte totali</span></div>
+    <div class="stat"><span id="stat-unique" class="num">0</span><span class="lbl">Voci uniche</span></div>
+    <div class="stat"><span id="stat-value" class="num">€0</span><span class="lbl">Valore stimato</span></div>
+  </div>
+</header>
+
+<div class="toolbar" id="toolbar">
+  <div class="toolbar-collapse">
+  <div class="toolbar-content" id="toolbar-content">
+    <div class="row">
+      <input type="text" id="import-url" class="import-bar" placeholder="Incolla un link Scryfall, EDHREC, Moxfield o Archidekt…">
+      <button class="primary" id="btn-import-url">Importa da link</button>
+      <button class="ghost" id="btn-bulk-import">Importa lista/CSV</button>
+      <button class="ghost" id="btn-scan-card">📷 Scansiona carta</button>
+      <input type="file" accept="image/*" capture="environment" id="scan-input" style="display:none;">
+      <button class="primary" id="btn-add-card">＋ Aggiungi carta</button>
+      <button class="ghost" id="btn-open-decks">🗂 Miei mazzi EDH</button>
+      <button class="ghost" id="btn-open-game">🎮 Gioca contro di me</button>
+    </div>
+    <div class="row">
+      <span id="import-status"></span>
+    </div>
+    <div class="row">
+      <input type="search" id="search-input" class="search-bar" placeholder="Cerca per nome…">
+      <div class="filters" id="rarity-filters"></div>
+      <select id="set-filter"><option value="">Tutte le espansioni</option></select>
+      <select id="sort-mode" title="Ordina le carte">
+        <option value="name">Nome (A–Z)</option>
+        <option value="price-desc">Prezzo: dal più caro</option>
+        <option value="price-asc">Prezzo: dal più economico</option>
+        <option value="qty-desc">Quantità: dalla maggiore</option>
+        <option value="qty-asc">Quantità: dalla minore</option>
+      </select>
+      <div style="flex:1"></div>
+      <button id="btn-refresh-prices" title="Ricalcola prezzi, immagini e tipi da Scryfall/Cardmarket">⟳ Aggiorna tutto</button>
+      <button id="btn-export" class="ghost">Esporta JSON</button>
+      <button id="btn-reset-quantities" class="ghost" title="Riporta la quantità di ogni carta a 1, per ricontrollare quante copie diverse possiedi">🔁 Quantità a 1x</button>
+    </div>
+    <div class="row" style="justify-content:center;">
+      <button class="toolbar-toggle toolbar-toggle-mid" id="toolbar-toggle-mid" title="Comprimi subito ricerca e filtri per scorrere le carte">▲ Comprimi e scorri le carte</button>
+    </div>
+    <div class="row">
+      <span style="font-size:11px; color:var(--text-faint); margin-right:2px;">Tipo:</span>
+      <div class="filters" id="type-filters"></div>
+    </div>
+    <div class="row">
+      <span style="font-size:11px; color:var(--text-faint); margin-right:2px;">Vista:</span>
+      <div class="view-toggle" id="display-toggle">
+        <button class="view-btn active" data-display="list">☰ Lista</button>
+        <button class="view-btn" data-display="grid">▦ Griglia</button>
+      </div>
+      <span style="font-size:11px; color:var(--text-faint); margin:0 2px 0 12px;">Raggruppa per:</span>
+      <div class="view-toggle" id="group-toggle">
+        <button class="view-btn active" data-group="none">Nessuno</button>
+        <button class="view-btn" data-group="set">▤ Espansione</button>
+        <button class="view-btn" data-group="type">◈ Tipo</button>
+        <button class="view-btn" data-group="price">€ Prezzo</button>
+      </div>
+    </div>
+  </div>
+  </div>
+  <button class="toolbar-toggle" id="toolbar-toggle" title="Comprimi o riapri ricerca e filtri">▲ Comprimi filtri e ricerca</button>
+</div>
+</div>
+
+<main id="main"></main>
+
+<section id="decks-section" style="display:none; padding:24px 32px;">
+  <button class="ghost" id="btn-back-to-collection" style="margin-bottom:18px;">← Torna al raccoglitore</button>
+
+  <div style="max-width:560px;">
+    <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 6px; color:var(--text);">🗂 Miei mazzi EDH</h2>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 20px; line-height:1.6;">
+      Collega il tuo profilo Moxfield per raggiungerlo in un tocco, e salva qui i link diretti ai tuoi mazzi Commander preferiti per aprirli al volo.
+    </p>
+
+    <div class="field">
+      <label>Il tuo username Moxfield</label>
+      <div class="field-row" style="align-items:center;">
+        <input type="text" id="moxfield-username" placeholder="es. marconovara88">
+        <button id="btn-save-moxfield-username" class="primary" style="flex:0 0 auto;">Salva</button>
+      </div>
+    </div>
+    <a id="moxfield-decks-link" href="https://moxfield.com" target="_blank" rel="noopener"
+       style="display:block; text-align:center; margin:14px 0 28px; padding:12px; border-radius:6px; background:var(--accent); color:#1c1712; font-weight:700; text-decoration:none; font-size:13.5px;">
+      Apri tutti i miei mazzi su Moxfield ↗
+    </a>
+
+    <h3 style="font-family:var(--font-display); font-size:15px; color:var(--accent); margin:0 0 10px; border-bottom:1px solid var(--border-soft); padding-bottom:8px;">
+      Collegamenti rapidi ai singoli mazzi
+    </h3>
+    <div id="deck-links-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;"></div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Nome mazzo</label>
+        <input type="text" id="new-deck-name" placeholder="es. Atraxa, Prassi Sconfinata">
+      </div>
+      <div class="field">
+        <label>Link Moxfield del mazzo</label>
+        <input type="text" id="new-deck-url" placeholder="https://moxfield.com/decks/...">
+      </div>
+    </div>
+    <button id="btn-add-deck-link" class="primary">+ Aggiungi mazzo</button>
+  </div>
+</section>
+
+<section id="game-section" style="display:none; padding:24px 32px;">
+  <button class="ghost" id="btn-back-from-game" style="margin-bottom:18px;">← Torna al raccoglitore</button>
+
+  <!-- Schermata di impostazione partita -->
+  <div id="game-setup" style="max-width:560px;">
+    <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 6px; color:var(--text);">🎮 Gioca contro di me</h2>
+    <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 20px; line-height:1.6;">
+      Scegli come costruire un mazzo per te e uno per me. Io gioco i miei turni descrivendoli qui in chat: tu rifletti le mie mosse sul tavolo condiviso.
+    </p>
+    <p class="bulk-help" style="margin-bottom:18px;">
+      Consigliato: <strong>"Scegli dalla tua collezione"</strong> — usa le carte già presenti nel raccoglitore, senza bisogno di alcuna connessione a Moxfield o Scryfall (funziona sempre, anche offline). Puoi filtrare per tipo (creatura, terra, istantaneo…), spuntare tutte le carte che vuoi e aggiungerle al mazzo in un colpo solo — utile per costruire un mazzo Commander da 100 carte senza cercarle una alla volta. Le altre due vie richiedono di contattare siti esterni e possono essere bloccate a seconda del browser o della rete.
+    </p>
+    <div class="field">
+      <label>Il tuo mazzo</label>
+      <button type="button" class="ghost" id="toggle-player-collection" style="font-size:11.5px;">🗂 Scegli dalla tua collezione</button>
+      <div id="player-collection-block" style="display:none; margin-top:8px;">
+        <div class="filters" id="player-collection-typefilter" style="margin-bottom:6px;"></div>
+        <input type="text" id="player-collection-search" placeholder="Filtra per nome (facoltativo)…">
+        <div id="player-collection-suggestions" class="autocomplete-list-inline autocomplete-list-checkbox"></div>
+        <button type="button" class="primary" id="player-collection-addselected" style="margin-top:6px; display:none;">+ Aggiungi selezionate (<span id="player-collection-selcount">0</span>)</button>
+        <div id="player-collection-picked" class="picked-cards-list"></div>
+      </div>
+      <select id="game-player-deck" style="margin-top:8px;"><option value="">— oppure un mazzo salvato (link Moxfield) —</option></select>
+      <input type="text" id="game-player-deck-manual" placeholder="oppure incolla qui un link Moxfield" style="margin-top:6px;">
+      <button type="button" class="ghost" id="toggle-player-paste" style="margin-top:8px; font-size:11.5px;">Il link non funziona? Incolla la lista carte</button>
+      <div id="player-paste-block" style="display:none; margin-top:8px;">
+        <textarea id="game-player-decklist" style="min-height:100px;" placeholder="Incolla qui l'export testuale del mazzo (una carta per riga, es. 1 Sol Ring)"></textarea>
+        <input type="text" id="game-player-commander" placeholder="Nome del comandante (facoltativo)" style="margin-top:6px;">
+      </div>
+    </div>
+    <div class="field">
+      <label>Il mio mazzo (Claude)</label>
+      <button type="button" class="ghost" id="toggle-claude-collection" style="font-size:11.5px;">🗂 Scegli dalla tua collezione</button>
+      <div id="claude-collection-block" style="display:none; margin-top:8px;">
+        <div class="filters" id="claude-collection-typefilter" style="margin-bottom:6px;"></div>
+        <input type="text" id="claude-collection-search" placeholder="Filtra per nome (facoltativo)…">
+        <div id="claude-collection-suggestions" class="autocomplete-list-inline autocomplete-list-checkbox"></div>
+        <button type="button" class="primary" id="claude-collection-addselected" style="margin-top:6px; display:none;">+ Aggiungi selezionate (<span id="claude-collection-selcount">0</span>)</button>
+        <div id="claude-collection-picked" class="picked-cards-list"></div>
+      </div>
+      <select id="game-claude-deck" style="margin-top:8px;"><option value="">— oppure un mazzo salvato (link Moxfield) —</option></select>
+      <input type="text" id="game-claude-deck-manual" placeholder="oppure incolla qui un link Moxfield" style="margin-top:6px;">
+      <button type="button" class="ghost" id="toggle-claude-paste" style="margin-top:8px; font-size:11.5px;">Il link non funziona? Incolla la lista carte</button>
+      <div id="claude-paste-block" style="display:none; margin-top:8px;">
+        <textarea id="game-claude-decklist" style="min-height:100px;" placeholder="Incolla qui l'export testuale del mazzo (una carta per riga, es. 1 Sol Ring)"></textarea>
+        <input type="text" id="game-claude-commander" placeholder="Nome del comandante (facoltativo)" style="margin-top:6px;">
+      </div>
+    </div>
+    <div class="field" style="max-width:160px;">
+      <label>Punti vita di partenza</label>
+      <input type="number" id="game-start-life" value="40" min="1">
+    </div>
+    <p id="game-setup-status" style="font-size:12.5px; color:var(--text-dim); min-height:20px;"></p>
+    <button id="btn-start-game" class="primary">Pesca le mani di apertura</button>
+  </div>
+
+  <!-- Tavolo di gioco -->
+  <div id="game-board" style="display:none;"></div>
+</section>
+
+
+<footer class="note">
+  I prezzi in euro sono recuperati automaticamente da Scryfall, che sincronizza i propri dati di mercato direttamente da Cardmarket, distinguendo sempre tra versione normale e foil e tra le diverse edizioni (ogni copia è collegata alla sua stampa esatta). All'apertura del raccoglitore i prezzi più vecchi di 24 ore vengono aggiornati da soli in sottofondo; la freccia ▲/▼ accanto al prezzo mostra la variazione rispetto all'ultimo controllo. Il link a fianco di ogni carta apre la relativa pagina di ricerca su Cardmarket per una verifica manuale. Ogni modifica viene salvata subito nel cloud: l'indicatore "☁" in alto conferma quando tutto è sincronizzato. Se sei offline il catalogo resta comunque modificabile e il sistema ritenta il salvataggio da solo appena torna la connessione; se provi a chiudere la pagina con modifiche non ancora sincronizzate, il browser te lo segnala prima di uscire. Per sicurezza, usa comunque "Esporta JSON" ogni tanto come backup personale.
+  <br><span id="backend-note"></span>
+</footer>
+
+<div id="hover-preview"><img id="hover-preview-img" src="" alt=""></div>
+<div id="toast"></div>
+
+<!-- Add/Edit card modal -->
+<div class="overlay" id="card-overlay">
+  <div class="modal">
+    <h2 id="modal-title">Aggiungi carta</h2>
+    <input type="hidden" id="edit-id">
+    <div class="field">
+      <label>Nome carta</label>
+      <div class="field-row" style="align-items:flex-start;">
+        <div class="autocomplete-wrap">
+          <input type="text" id="f-name" placeholder="Nome in inglese o italiano (es. Lightning Bolt o Fulmine)…" autocomplete="off">
+          <div class="autocomplete-list" id="ac-list"></div>
+        </div>
+        <button type="button" id="btn-scryfall-lookup" style="flex:0 0 auto;">Cerca su Scryfall</button>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field" style="flex:1.4;">
+        <label>Espansione <span id="set-loading" style="display:none; color:var(--text-faint); font-weight:400; text-transform:none; letter-spacing:0;">(ricerca in corso…)</span></label>
+        <div class="set-picker-wrap" id="set-picker-wrap">
+          <button type="button" class="set-picker-display" id="f-set-display">— scrivi il nome della carta per vedere le espansioni —</button>
+          <div class="autocomplete-list" id="f-set-list"></div>
+        </div>
+        <input type="text" id="f-set-manual" placeholder="Nome espansione personalizzato" style="display:none; margin-top:6px;">
+      </div>
+      <div class="field">
+        <label>Codice set</label>
+        <input type="text" id="f-setcode" placeholder="es. DOM">
+      </div>
+    </div>
+    <input type="hidden" id="f-scryfallid">
+    <input type="hidden" id="f-pricefoileur">
+    <div class="field-row">
+      <div class="field">
+        <label>Rarità</label>
+        <select id="f-rarity">
+          <option value="common">Comune</option>
+          <option value="uncommon">Non comune</option>
+          <option value="rare">Rara</option>
+          <option value="mythic">Mitica</option>
+          <option value="token">Token</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo</label>
+        <select id="f-type">
+          <option value="terra">Terra</option>
+          <option value="creatura">Creatura</option>
+          <option value="istantaneo">Istantaneo</option>
+          <option value="stregoneria">Stregoneria</option>
+          <option value="planeswalker">Planeswalker</option>
+          <option value="artefatto">Artefatto</option>
+          <option value="incantesimo">Incantesimo</option>
+          <option value="altro">Altro</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Quantità</label>
+        <input type="number" id="f-qty" min="1" value="1">
+      </div>
+      <div class="field" style="flex:0 0 90px;">
+        <label>Foil</label>
+        <select id="f-foil">
+          <option value="no">No</option>
+          <option value="si">Sì</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Condizione</label>
+        <select id="f-condition">
+          <option value="">—</option>
+          <option value="NM">Near Mint</option>
+          <option value="SP">Slightly Played</option>
+          <option value="MP">Moderately Played</option>
+          <option value="HP">Heavily Played</option>
+          <option value="DMG">Damaged</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Lingua</label>
+        <select id="f-lang">
+          <option value="">—</option>
+          <option value="IT">Italiano</option>
+          <option value="EN">Inglese</option>
+          <option value="JP">Giapponese</option>
+          <option value="DE">Tedesco</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>URL immagine (opzionale)</label>
+      <input type="text" id="f-image" placeholder="Compilato automaticamente con la ricerca Scryfall">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Prezzo € (manuale o da Scryfall)</label>
+        <input type="number" id="f-price" step="0.01" placeholder="0.00">
+      </div>
+    </div>
+    <div class="field">
+      <label>Note</label>
+      <textarea id="f-notes" placeholder="Annotazioni personali…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <div class="left">
+        <button id="btn-duplicate" style="display:none;">Duplica come nuova espansione</button>
+      </div>
+      <div class="left">
+        <button id="btn-cancel-modal" class="ghost">Annulla</button>
+        <button id="btn-save-card" class="primary">Salva</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk import modal -->
+<div class="overlay" id="bulk-overlay">
+  <div class="modal">
+    <h2>Importa lista in blocco</h2>
+    <p class="bulk-help">
+      Incolla qui una lista esportata da Moxfield, Archidekt o Arena, una carta per riga. Riconosco automaticamente quantità, espansione, numero di collezione e foil, ad esempio:
+      <code>1 Eye of Ugin (MM2) 242 *F*</code> → espansione Modern Masters 2, numero 242, foil.
+      Bastano anche formati più semplici come <code>4 Lightning Bolt (LEA)</code> o solo <code>Sol Ring</code>: quando indichi set e numero recupero la stampa esatta da Scryfall, senza bisogno di sistemare nulla a mano dopo. Funzionano anche i nomi in italiano, es. <code>1 Fulmine</code>.
+    </p>
+    <div class="field">
+      <textarea id="bulk-text" style="min-height:160px;" placeholder="1 Eye of Ugin (MM2) 242 *F*&#10;4 Lightning Bolt (LEA)&#10;2 Brainstorm (MMA) 45"></textarea>
+    </div>
+    <div id="bulk-progress" style="font-size:12px; color:var(--text-dim);"></div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="left">
+        <button id="btn-cancel-bulk" class="ghost">Annulla</button>
+        <button id="btn-run-bulk" class="primary">Importa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scansione carta con fotocamera -->
+<div class="overlay" id="scan-overlay">
+  <div class="modal" style="max-width:380px; text-align:center;">
+    <h2>Scansiona carta</h2>
+    <img id="scan-preview-img" src="" alt="" style="width:100%; max-height:280px; object-fit:contain; border-radius:8px; margin-bottom:14px; border:1px solid var(--border); background:var(--bg-input);">
+    <p id="scan-status" style="font-size:13px; color:var(--text-dim); min-height:40px;">Preparazione…</p>
+    <p class="bulk-help" style="text-align:left;">
+      Consigli per un riconoscimento migliore: sfondo semplice e uniforme dietro la carta, buona luce evitando riflessi sulla superficie, carta ben dritta e a fuoco, titolo in alto ben leggibile e non tagliato dall'inquadratura.
+    </p>
+    <div id="scan-fallback" style="display:none; margin-bottom:14px;">
+      <a href="https://lens.google.com" target="_blank" rel="noopener" style="color:var(--accent); font-size:12.5px; text-decoration:none;">Prova a identificarla con Google Lens ↗</a>
+    </div>
+    <div class="modal-actions">
+      <div class="left">
+        <button id="btn-scan-cancel" class="ghost">Annulla</button>
+      </div>
+      <div class="left">
+        <button id="btn-scan-retry" class="ghost" style="display:none;">Riprova foto</button>
+        <button id="btn-scan-manual" class="primary" style="display:none;">Inserisci a mano</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* =========================================================================
+     CONFIGURAZIONE CLOUD PERSONALE (Firebase)
+     -------------------------------------------------------------------------
+     Il raccoglitore funziona già "di fabbrica" grazie al salvataggio integrato
+     di Claude, ma quel salvataggio funziona solo quando il file viene aperto
+     dentro Claude.ai. Se vuoi un cloud TUO, indipendente, che funzioni anche
+     aprendo questo file da qualsiasi browser o dispositivo:
+
+     1) Vai su https://console.firebase.google.com con il tuo account Google
+        (es. marconovara88@gmail.com) e crea un nuovo progetto gratuito.
+     2) Nel progetto, apri "Firestore Database" → "Crea database" → modalità
+        di test (puoi restringere le regole di sicurezza in seguito).
+     3) Vai in "Impostazioni progetto" → sezione "Le tue app" → crea una
+        "App web" (basta un nome, non serve hosting) e copia l'oggetto
+        firebaseConfig che ti viene mostrato.
+     4) Incolla qui sotto i valori (o mandameli in chat e li inserisco io).
+
+     Finché i campi restano vuoti, il raccoglitore continua a usare il
+     salvataggio integrato di Claude, esattamente come prima: nessuna
+     configurazione è obbligatoria per usarlo. */
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyBDq_vqud0UFLseeseJy5HNt8ZR2sjeDUo",
+    authDomain: "marco-f6bcb.firebaseapp.com",
+    projectId: "marco-f6bcb",
+    storageBucket: "marco-f6bcb.firebasestorage.app",
+    messagingSenderId: "183252897944",
+    appId: "1:183252897944:web:433323c42899799fe200ed"
+  };
+  const FIREBASE_DOC_PATH = { collection: "mtg_raccoglitore", doc: "collezione" };
+  /* ========================================================================= */
+
+  let useFirebase = false;
+  let db = null;
+  if(FIREBASE_CONFIG.apiKey){
+    try{
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      useFirebase = true;
+    }catch(e){
+      useFirebase = false;
+    }
+  }
+
+  const RARITY_META = {
+    common:   {label:"Comune",     letter:"C", color:"var(--rarity-common)"},
+    uncommon: {label:"Non comune", letter:"U", color:"var(--rarity-uncommon)"},
+    rare:     {label:"Rara",       letter:"R", color:"var(--rarity-rare)"},
+    mythic:   {label:"Mitica",     letter:"M", color:"var(--rarity-mythic)"},
+    token:    {label:"Token",      letter:"T", color:"var(--rarity-token)"}
+  };
+
+  const TYPE_META = {
+    terra:        {label:"Terra"},
+    creatura:     {label:"Creatura"},
+    istantaneo:   {label:"Istantaneo"},
+    stregoneria:  {label:"Stregoneria"},
+    planeswalker: {label:"Planeswalker"},
+    artefatto:    {label:"Artefatto"},
+    incantesimo:  {label:"Incantesimo"},
+    altro:        {label:"Altro"}
+  };
+
+  // Ordine di priorità per dedurre il tipo principale dalla type_line di Scryfall
+  // (una carta può avere più supertipi, es. "Artifact Creature")
+  const TYPE_DETECT_ORDER = [
+    ['Planeswalker','planeswalker'],
+    ['Land','terra'],
+    ['Creature','creatura'],
+    ['Instant','istantaneo'],
+    ['Sorcery','stregoneria'],
+    ['Artifact','artefatto'],
+    ['Enchantment','incantesimo']
+  ];
+
+  function detectTypeFromLine(typeLine){
+    if(!typeLine) return 'altro';
+    for(const [needle, key] of TYPE_DETECT_ORDER){
+      if(typeLine.includes(needle)) return key;
+    }
+    return 'altro';
+  }
+
+  const PRICE_BUCKET_META = {
+    over50:   {label:"Oltre 50 €"},
+    b10to50:  {label:"10 – 50 €"},
+    b1to10:   {label:"1 – 10 €"},
+    under1:   {label:"Meno di 1 €"},
+    unknown:  {label:"Prezzo sconosciuto"}
+  };
+  const PRICE_BUCKET_ORDER = ['over50','b10to50','b1to10','under1','unknown'];
+
+  function cardPrice(c){
+    const p = c.foil ? (c.priceFoilEur ?? c.priceEur) : c.priceEur;
+    return typeof p === 'number' ? p : null;
+  }
+
+  function priceBucketOf(c){
+    const p = cardPrice(c);
+    if(p == null) return 'unknown';
+    if(p >= 50) return 'over50';
+    if(p >= 10) return 'b10to50';
+    if(p >= 1) return 'b1to10';
+    return 'under1';
+  }
+
+  let cards = [];
+  let moxfieldUsername = '';
+  let deckLinks = [];
+  let displayMode = "list";   // 'list' | 'grid'
+  let groupMode = "none";     // 'none' | 'set' | 'type' | 'price'
+  let sortMode = "name";      // 'name' | 'price-desc' | 'price-asc'
+  let activeRarities = new Set(Object.keys(RARITY_META));
+  let activeTypes = new Set(); // vuoto = nessun filtro, mostra tutti i tipi
+  let setFilter = "";
+  let searchTerm = "";
+  let editingId = null;
+  let storageAvailable = true;
+  let dirty = false;
+  let saveInFlight = false;
+  let saveQueued = false;
+  let retryTimer = null;
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  function uid(){ return 'c_' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+  /* ---------------- Sezione "Miei mazzi EDH" ---------------- */
+  function moxfieldDecksUrl(username){
+    return `https://moxfield.com/users/${encodeURIComponent(username)}/decks`;
+  }
+
+  /* Link alle combo EDHREC per un dato comandante: le pagine combo di EDHREC
+     seguono lo schema edhrec.com/combos/nome-comandante (minuscolo, accenti e
+     punteggiatura rimossi, spazi sostituiti da trattini). */
+  function edhrecCombosLink(commanderName){
+    const slug = commanderName
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-');
+    return `https://edhrec.com/combos/${slug}`;
+  }
+
+  function renderDecksSection(){
+    const usernameInput = $('#moxfield-username');
+    if(usernameInput) usernameInput.value = moxfieldUsername || '';
+    const link = $('#moxfield-decks-link');
+    if(link) link.href = moxfieldUsername ? moxfieldDecksUrl(moxfieldUsername) : 'https://moxfield.com';
+
+    const list = $('#deck-links-list');
+    if(!list) return;
+    if(deckLinks.length === 0){
+      list.innerHTML = `<div class="deck-link-empty">Non hai ancora salvato collegamenti a mazzi. Aggiungine uno qui sotto.</div>`;
+      return;
+    }
+    list.innerHTML = deckLinks.map(d => `
+      <div class="deck-link-item" data-id="${d.id}">
+        <a href="${escapeAttr(d.url)}" target="_blank" rel="noopener">${escapeHtml(d.name)} ↗</a>
+        <a href="${edhrecCombosLink(d.name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per questo comandante (basato sul nome del mazzo)">🔗 Combo</a>
+        <button class="icon-btn" data-action="delete-deck" title="Rimuovi">✕</button>
+      </div>`).join('');
+    list.querySelectorAll('[data-action="delete-deck"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const id = e.target.closest('[data-id]').dataset.id;
+        deckLinks = deckLinks.filter(d => d.id !== id);
+        scheduleSave(); renderDecksSection();
+      });
+    });
+  }
+
+  function openDecksSection(){
+    $('#toolbar').style.display = 'none';
+    $('#main').style.display = 'none';
+    $('#game-section').style.display = 'none';
+    $('#decks-section').style.display = 'block';
+    renderDecksSection();
+  }
+  function closeDecksSection(){
+    $('#decks-section').style.display = 'none';
+    $('#toolbar').style.display = '';
+    $('#main').style.display = '';
+  }
+
+  /* ---------------- Tavolo di gioco ("Gioca contro di me") ----------------
+     Un compagno virtuale per giocare partite informali con i mazzi reali
+     salvati su Moxfield: grimorio, mano, comandante, campo di battaglia,
+     cimitero, esilio e punti vita per entrambi i lati, più un timer per
+     scandire il ritmo delle mosse. Non è un motore di regole — le mosse
+     "di Claude" sono descritte in chat e riflesse qui sul tavolo condiviso
+     a mano. Lo stato della partita vive solo in questa sessione, non viene
+     salvato nel cloud. */
+  let gameState = null;
+  let turnTimer = { seconds: 90, total: 90, running: false, activeSide: 'player', intervalId: null };
+
+  function shuffleArray(arr){
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function populateGameDeckSelects(){
+    const opts = `<option value="">— oppure un mazzo salvato (link Moxfield) —</option>` +
+      deckLinks.map(d => `<option value="${escapeAttr(d.url)}">${escapeHtml(d.name)}</option>`).join('');
+    $('#game-player-deck').innerHTML = opts;
+    $('#game-claude-deck').innerHTML = opts;
+  }
+
+  /* ---------------- Costruzione mazzo dalla collezione (zero rete) ----------------
+     Usa direttamente le carte già presenti nel raccoglitore: nessuna chiamata
+     a Moxfield o Scryfall, quindi funziona sempre, anche offline o con
+     restrizioni di rete. Il filtro per tipo + la selezione multipla rendono
+     gestibile costruire un mazzo Commander da 100 carte, invece di dover
+     cercare e aggiungere una carta alla volta. */
+  const gameDeckPicks = { player: [], claude: [] };
+  const collectionTypeFilters = { player: new Set(), claude: new Set() }; // vuoto = tutti i tipi
+  const collectionSelected = { player: new Map(), claude: new Map() }; // name -> {name, imageUrl}
+  const MAX_COLLECTION_ROWS = 60;
+
+  function renderCollectionTypeFilter(prefix){
+    const wrap = $(`#${prefix}-collection-typefilter`);
+    if(!wrap) return;
+    const active = collectionTypeFilters[prefix];
+    wrap.innerHTML = Object.entries(TYPE_META).map(([key,meta])=>`
+      <div class="chip ${active.has(key)?'active':''}" data-type="${key}">${meta.label}</div>`).join('');
+    wrap.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const t = chip.dataset.type;
+        if(active.has(t)) active.delete(t); else active.add(t);
+        renderCollectionSuggestions(prefix, $(`#${prefix}-collection-search`).value);
+      });
+    });
+  }
+
+  function renderCollectionSuggestions(prefix, query){
+    const list = $(`#${prefix}-collection-suggestions`);
+    const q = (query||'').trim().toLowerCase();
+    const typeFilter = collectionTypeFilters[prefix];
+    renderCollectionTypeFilter(prefix);
+
+    // suggerisce nomi unici tra le carte del raccoglitore che corrispondono a
+    // ricerca testuale (facoltativa) e filtro per tipo (facoltativo)
+    const seen = new Set();
+    const matches = [];
+    for(const c of cards){
+      if(seen.has(c.name.toLowerCase())) continue;
+      if(q && !c.name.toLowerCase().includes(q)) continue;
+      if(typeFilter.size > 0 && !typeFilter.has(c.type || 'altro')) continue;
+      seen.add(c.name.toLowerCase());
+      matches.push(c);
+    }
+    matches.sort((a,b)=> a.name.localeCompare(b.name,'it'));
+
+    if(matches.length === 0){
+      list.innerHTML = `<div class="ac-row" style="cursor:default; color:var(--text-faint); font-style:italic;">Nessuna carta trovata con questi filtri</div>`;
+      updateSelectedCount(prefix);
+      return;
+    }
+    const shown = matches.slice(0, MAX_COLLECTION_ROWS);
+    const note = matches.length > MAX_COLLECTION_ROWS
+      ? `<div class="ac-list-note">Mostrate ${MAX_COLLECTION_ROWS} di ${matches.length} carte — restringi con un tipo o un nome per vederne altre</div>` : '';
+    const sel = collectionSelected[prefix];
+    list.innerHTML = note + shown.map(c => {
+      const m = TYPE_META[c.type] || TYPE_META.altro;
+      const checked = sel.has(c.name.toLowerCase());
+      return `<div class="ac-row ${checked?'checked':''}" data-name="${escapeAttr(c.name)}" data-img="${escapeAttr(c.imageUrl||'')}">
+        <input type="checkbox" ${checked?'checked':''}>
+        <div class="ac-row-thumb" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}"></div>
+        <span class="ac-row-name">${escapeHtml(c.name)}</span>
+        <span class="ac-row-type">${escapeHtml(m.label)}</span>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.ac-row[data-name]').forEach(row=>{
+      row.addEventListener('click', (e)=>{
+        const name = row.dataset.name, img = row.dataset.img;
+        const key = name.toLowerCase();
+        if(sel.has(key)){ sel.delete(key); row.classList.remove('checked'); row.querySelector('input').checked = false; }
+        else{ sel.set(key, {name, imageUrl:img}); row.classList.add('checked'); row.querySelector('input').checked = true; }
+        updateSelectedCount(prefix);
+      });
+    });
+    updateSelectedCount(prefix);
+  }
+
+  function updateSelectedCount(prefix){
+    const n = collectionSelected[prefix].size;
+    const btn = $(`#${prefix}-collection-addselected`);
+    const countEl = $(`#${prefix}-collection-selcount`);
+    if(countEl) countEl.textContent = n;
+    if(btn) btn.style.display = n > 0 ? 'inline-block' : 'none';
+  }
+
+  function addSelectedToDeck(prefix){
+    const sel = collectionSelected[prefix];
+    if(sel.size === 0) return;
+    const count = sel.size;
+    sel.forEach(({name, imageUrl}) => addCardToDeckPick(prefix, name, imageUrl));
+    sel.clear();
+    updateSelectedCount(prefix);
+    renderCollectionSuggestions(prefix, $(`#${prefix}-collection-search`).value);
+    toast(`Aggiunte ${count} carte al mazzo.`);
+  }
+
+  function addCardToDeckPick(prefix, name, imageUrl){
+    const picks = gameDeckPicks[prefix];
+    const existing = picks.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if(existing){ existing.qty++; }
+    else{ picks.push({ name, imageUrl: imageUrl||'', qty: 1, isCommander: false }); }
+    renderDeckPicks(prefix);
+  }
+
+  function renderDeckPicks(prefix){
+    const wrap = $(`#${prefix}-collection-picked`);
+    const picks = gameDeckPicks[prefix];
+    if(picks.length === 0){ wrap.innerHTML = ''; return; }
+    wrap.innerHTML = picks.map((p, i) => `
+      <div class="picked-card-row" data-idx="${i}">
+        <span class="pc-name">${escapeHtml(p.name)}</span>
+        <button data-act="qty-down">−</button>
+        <span class="pc-qty">${p.qty}</span>
+        <button data-act="qty-up">+</button>
+        <button data-act="cmd" class="${p.isCommander?'cmd-active':''}" title="Segna come comandante">👑</button>
+        <button data-act="remove">✕</button>
+      </div>`).join('');
+    wrap.querySelectorAll('.picked-card-row').forEach(row=>{
+      const idx = parseInt(row.dataset.idx);
+      row.querySelector('[data-act="qty-up"]').addEventListener('click', ()=>{ picks[idx].qty++; renderDeckPicks(prefix); });
+      row.querySelector('[data-act="qty-down"]').addEventListener('click', ()=>{
+        picks[idx].qty--;
+        if(picks[idx].qty <= 0) picks.splice(idx,1);
+        renderDeckPicks(prefix);
+      });
+      row.querySelector('[data-act="cmd"]').addEventListener('click', ()=>{ picks[idx].isCommander = !picks[idx].isCommander; renderDeckPicks(prefix); });
+      row.querySelector('[data-act="remove"]').addEventListener('click', ()=>{ picks.splice(idx,1); renderDeckPicks(prefix); });
+    });
+  }
+
+  function buildDeckDataFromPicks(prefix){
+    const picks = gameDeckPicks[prefix];
+    const library = [];
+    const command = [];
+    picks.forEach(p=>{
+      for(let i=0;i<p.qty;i++){
+        const cardObj = { uid: uid(), name: p.name, imageUrl: p.imageUrl||'', tapped:false, isCommander: !!p.isCommander };
+        if(p.isCommander) command.push(cardObj);
+        else library.push(cardObj);
+      }
+    });
+    if(library.length === 0 && command.length === 0) throw new Error('Non hai scelto nessuna carta dalla collezione.');
+    return { library: shuffleArray(library), command };
+  }
+
+  function setGameSetupStatus(text, isError){
+    const el = $('#game-setup-status');
+    if(el){ el.textContent = text || ''; el.style.color = isError ? '#e0958c' : 'var(--text-dim)'; }
+  }
+
+  function cardObjFrom(name, sc, isCommander){
+    const img = sc ? ((sc.image_uris && sc.image_uris.small) ||
+      (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.small) || '') : '';
+    return { uid: uid(), name, imageUrl: img, tapped: false, isCommander: !!isCommander };
+  }
+
+  /* Recupera un intero mazzo da Moxfield, separando automaticamente gli
+     eventuali comandanti (board "commanders" dell'API Moxfield) dal resto
+     della libreria, così la zona Comandante si popola da sola. */
+  /* Recupera le immagini da Scryfall per un elenco di nomi, ma senza mai far
+     fallire l'intero caricamento del mazzo: se questa chiamata ha problemi
+     di rete, la partita parte comunque con le carte senza immagine (si
+     possono comunque riconoscere dal nome, e leggerle poi su Scryfall). */
+  async function safeEnrichNames(names){
+    try{
+      return await fetchCardsByNames(names);
+    }catch(e){
+      return [];
+    }
+  }
+
+  async function loadDeckData(url){
+    const id = extractMoxfieldDeckId(url.trim());
+    if(!id) throw new Error('Link Moxfield non riconosciuto.');
+    let res;
+    try{
+      res = await fetch(`https://api2.moxfield.com/v3/decks/all/${id}`);
+    }catch(networkErr){
+      throw new Error('Impossibile contattare Moxfield dal browser (probabile blocco CORS del sito). Usa "Incolla la lista carte" qui sopra.');
+    }
+    if(!res.ok) throw new Error('Mazzo non trovato o non pubblico (risposta ' + res.status + ' da Moxfield).');
+    const data = await res.json();
+    const mainBoard = data.mainboard || {};
+    const cmdBoard = data.commanders || {};
+    const mainEntries = Object.values(mainBoard);
+    const cmdEntries = Object.values(cmdBoard);
+    if(mainEntries.length === 0 && cmdEntries.length === 0) throw new Error('Il mazzo risulta vuoto.');
+
+    const mainNames = [];
+    mainEntries.forEach(entry=>{
+      const n = (entry.card && entry.card.name) || entry.name;
+      if(!n) return;
+      const qty = entry.quantity || 1;
+      for(let i=0;i<qty;i++) mainNames.push(n);
+    });
+    const cmdNames = cmdEntries.map(entry => (entry.card && entry.card.name) || entry.name).filter(Boolean);
+
+    const allUnique = Array.from(new Set([...mainNames, ...cmdNames]));
+    const cardObjs = await safeEnrichNames(allUnique);
+    const byName = {};
+    cardObjs.forEach(c=>{ if(c) byName[c.name.toLowerCase()] = c; });
+
+    const library = shuffleArray(mainNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], false)));
+    const command = cmdNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], true));
+    return { library, command };
+  }
+
+  /* Percorso alternativo, senza passare da Moxfield: l'utente incolla
+     l'export testuale del mazzo (Moxfield → ⋯ → Export → Text). Usa solo
+     Scryfall per arricchire le carte (in modo opzionale, vedi sopra) —
+  const DECKLIST_HEADER_WORDS = new Set(['deck','main deck','mainboard','commander','commanders','sideboard','maybeboard','companion']);
+
+  function parseDecklistText(text){
+    return text.split('\n')
+      .map(l => l.trim())
+      .filter(l=>{
+        if(!l) return false;
+        // riconosce intestazioni anche con un conteggio a fianco, es. "Deck (99)", "Commander:"
+        const bare = l.toLowerCase().replace(/[\s:]*\(\d+\)\s*$/,'').replace(/:$/,'').trim();
+        return !DECKLIST_HEADER_WORDS.has(bare);
+      });
+  }
+
+  async function loadDeckDataFromText(deckText, commanderText){
+    const deckLines = parseDecklistText(deckText);
+    const cmdLines = parseDecklistText(commanderText || '');
+    if(deckLines.length === 0 && cmdLines.length === 0) throw new Error('Lista carte vuota.');
+
+    const mainNames = [];
+    deckLines.forEach(line=>{
+      const p = parseBulkLine(line);
+      if(!p || !p.name) return;
+      for(let i=0;i<(p.qty||1);i++) mainNames.push(p.name);
+    });
+    const cmdNames = cmdLines.map(line=>{
+      const p = parseBulkLine(line);
+      return p ? p.name : line;
+    }).filter(Boolean);
+
+    const allUnique = Array.from(new Set([...mainNames, ...cmdNames]));
+    const cardObjs = await safeEnrichNames(allUnique);
+    const byName = {};
+    cardObjs.forEach(c=>{ if(c) byName[c.name.toLowerCase()] = c; });
+
+    const library = shuffleArray(mainNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], false)));
+    const command = cmdNames.map(n => cardObjFrom(n, byName[n.toLowerCase()], true));
+    return { library, command };
+  }
+
+  /* Per ciascun lato: se è stata incollata una lista testuale, ha sempre la
+     priorità (è la via più affidabile); altrimenti tenta il link Moxfield. */
+  async function resolveDeckSide(prefix){
+    if(gameDeckPicks[prefix].length > 0){
+      return buildDeckDataFromPicks(prefix);
+    }
+    const pasteText = $(`#game-${prefix}-decklist`).value.trim();
+    if(pasteText){
+      const cmdText = $(`#game-${prefix}-commander`).value.trim();
+      return await loadDeckDataFromText(pasteText, cmdText);
+    }
+    const url = $(`#game-${prefix}-deck-manual`).value.trim() || $(`#game-${prefix}-deck`).value;
+    if(!url) throw new Error('Nessuna fonte indicata per questo mazzo.');
+    return await loadDeckData(url);
+  }
+
+  function hasDeckSource(prefix){
+    return gameDeckPicks[prefix].length > 0 ||
+      !!($(`#game-${prefix}-decklist`).value.trim() ||
+      $(`#game-${prefix}-deck-manual`).value.trim() ||
+      $(`#game-${prefix}-deck`).value);
+  }
+
+  function makePlayerState(name, deckData, life){
+    const library = deckData.library;
+    const hand = library.splice(0, Math.min(7, library.length));
+    return {
+      name, life, library, hand,
+      battlefield: [], graveyard: [], exile: [],
+      command: deckData.command,
+      graveyardOpen: false, exileOpen: false,
+      poison: 0, energy: 0, experience: 0,
+      attacking: []
+    };
+  }
+
+  async function startGame(){
+    if(!hasDeckSource('player') || !hasDeckSource('claude')){
+      setGameSetupStatus('Scegli un mazzo (o incolla una lista carte) per entrambi.', true);
+      return;
+    }
+    const btn = $('#btn-start-game');
+    btn.disabled = true;
+    setGameSetupStatus('Preparo i due mazzi e pesco le mani di apertura…', false);
+    try{
+      const startLife = parseInt($('#game-start-life').value) || 40;
+      const results = await Promise.allSettled([
+        resolveDeckSide('player'),
+        resolveDeckSide('claude')
+      ]);
+      const [playerResult, claudeResult] = results;
+      const failures = [];
+      if(playerResult.status === 'rejected') failures.push(`Il tuo mazzo: ${playerResult.reason && playerResult.reason.message ? playerResult.reason.message : playerResult.reason}`);
+      if(claudeResult.status === 'rejected') failures.push(`Il mio mazzo (Claude): ${claudeResult.reason && claudeResult.reason.message ? claudeResult.reason.message : claudeResult.reason}`);
+      if(failures.length > 0){
+        setGameSetupStatus(failures.join(' — '), true);
+        return;
+      }
+      gameState = {
+        player: makePlayerState('Tu', playerResult.value, startLife),
+        claude: makePlayerState('Claude', claudeResult.value, startLife),
+        log: []
+      };
+      logEvent('La partita inizia. Mani di apertura pescate.');
+      resetTurnTimer('player', false);
+      $('#game-setup').style.display = 'none';
+      $('#game-board').style.display = 'block';
+      setGameSetupStatus('', false);
+      renderGame();
+      toast('Mani di apertura pescate. Buona partita!');
+    }catch(e){
+      setGameSetupStatus('Errore imprevisto nella preparazione della partita: ' + (e && e.message ? e.message : e), true);
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  function endGame(){
+    if(!confirm('Terminare la partita e tornare al raccoglitore?')) return;
+    stopTurnTimer();
+    gameState = null;
+    $('#game-board').style.display = 'none';
+    $('#game-setup').style.display = 'block';
+    setGameSetupStatus('', false);
+  }
+
+  /* ---------- Timer delle mosse ----------
+     Un minuto per giocata/decisione, di norma: un semplice conto alla
+     rovescia condiviso, non vincolante (non blocca nulla), solo per dare
+     ritmo alla partita. Passando il turno si alterna il lato attivo e si
+     riparte da 60 secondi. */
+  function stopTurnTimer(){
+    if(turnTimer.intervalId){ clearInterval(turnTimer.intervalId); turnTimer.intervalId = null; }
+    turnTimer.running = false;
+  }
+
+  function resetTurnTimer(activeSide, keepRunning){
+    stopTurnTimer();
+    turnTimer.seconds = turnTimer.total;
+    if(activeSide) turnTimer.activeSide = activeSide;
+    if(keepRunning) startTurnTimer();
+    renderTimerDisplay();
+  }
+
+  function startTurnTimer(){
+    stopTurnTimer();
+    turnTimer.running = true;
+    turnTimer.intervalId = setInterval(()=>{
+      turnTimer.seconds--;
+      if(turnTimer.seconds <= 0){
+        turnTimer.seconds = 0;
+        stopTurnTimer();
+        toast(`⏱ Tempo scaduto per ${gameState ? gameState[turnTimer.activeSide].name : ''}!`);
+      }
+      renderTimerDisplay();
+    }, 1000);
+    renderTimerDisplay();
+  }
+
+  function passTurnTimer(){
+    const next = turnTimer.activeSide === 'player' ? 'claude' : 'player';
+    resetTurnTimer(next, true);
+  }
+
+  function renderTimerDisplay(){
+    const wrap = $('#turn-timer');
+    if(!wrap || !gameState) return;
+    const m = Math.floor(turnTimer.seconds / 60);
+    const s = String(turnTimer.seconds % 60).padStart(2,'0');
+    const low = turnTimer.seconds <= 10 && turnTimer.seconds > 0;
+    wrap.innerHTML = `
+      <span class="turn-label">Turno di: <strong>${escapeHtml(gameState[turnTimer.activeSide].name)}</strong></span>
+      <span class="turn-clock ${low?'low':''}">${m}:${s}</span>
+      <button class="ghost" id="btn-timer-toggle">${turnTimer.running?'⏸ Pausa':'▶ Avvia'}</button>
+      <button class="ghost" id="btn-timer-pass">Fine mossa →</button>
+    `;
+    $('#btn-timer-toggle').addEventListener('click', ()=>{
+      if(turnTimer.running) stopTurnTimer(); else startTurnTimer();
+      renderTimerDisplay();
+    });
+    $('#btn-timer-pass').addEventListener('click', passTurnTimer);
+  }
+
+  const ZONE_LABELS = { hand:'Mano', battlefield:'Campo', graveyard:'Cimitero', exile:'Esilio', library:'Grimorio', command:'Comando' };
+
+  function logEvent(text){
+    if(!gameState) return;
+    const time = new Date().toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+    gameState.log.unshift(`${time} — ${text}`);
+    if(gameState.log.length > 200) gameState.log.length = 200;
+    renderLogOnly();
+  }
+  function renderLogOnly(){
+    const el = $('#game-log-list');
+    if(!el || !gameState) return;
+    el.innerHTML = gameState.log.map(l => `<div class="log-row">${escapeHtml(l)}</div>`).join('');
+  }
+
+  function gameCardHtml(side, zone, c){
+    const bg = c.imageUrl ? `style="background-image:url('${escapeAttr(c.imageUrl)}')"` : '';
+    const tappedClass = (zone === 'battlefield' && c.tapped) ? 'tapped' : '';
+    const cmdClass = c.isCommander ? 'is-commander' : '';
+    const tokenClass = c.isToken ? 'is-token' : '';
+    const attackingClass = (zone === 'battlefield' && gameState[side].attacking.includes(c.uid)) ? 'attacking' : '';
+    const settleClass = (c.uid === lastMovedUid) ? 'settle' : '';
+    let actions = '';
+    const toCommand = c.isCommander && zone !== 'command'
+      ? `<button data-act="toCommand" title="Torna al comando">👑</button>` : '';
+    if(zone === 'hand'){
+      actions = `<div class="card-mini-actions">
+        <button data-act="toBattlefield" title="Gioca in campo">▶</button>
+        <button data-act="toGraveyard" title="Cimitero">🪦</button>
+        <button data-act="toExile" title="Esilio">🌀</button>
+        <button data-act="toLibrary" title="Rimescola nel mazzo">🔄</button>
+        ${toCommand}
+      </div>`;
+    }else if(zone === 'battlefield'){
+      actions = `<div class="card-mini-actions">
+        <button data-act="tap" title="Tappa/sblocca">⟳</button>
+        <button data-act="attack" title="Dichiara/annulla attacco">⚔</button>
+        <button data-act="toGraveyard" title="Cimitero">🪦</button>
+        <button data-act="toExile" title="Esilio">🌀</button>
+        <button data-act="toHand" title="Torna in mano">✋</button>
+        ${toCommand}
+      </div>`;
+    }else if(zone === 'graveyard' || zone === 'exile'){
+      actions = `<div class="card-mini-actions">
+        <button data-act="toHand" title="Torna in mano">✋</button>
+        <button data-act="toBattlefield" title="Gioca in campo">▶</button>
+        ${toCommand}
+      </div>`;
+    }else if(zone === 'command'){
+      actions = `<div class="card-mini-actions">
+        <button data-act="toBattlefield" title="Gioca in campo">▶</button>
+      </div>`;
+    }
+    return `<div class="game-card ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
+  }
+
+  function counterControl(side, key, icon, label){
+    const p = gameState[side];
+    return `<div class="counter-pill" title="${label}">
+      <span class="counter-icon">${icon}</span>
+      <button data-act="${key}-down">−</button>
+      <span class="counter-num">${p[key]}</span>
+      <button data-act="${key}-up">+</button>
+    </div>`;
+  }
+
+  function playerPanelHtml(side){
+    const p = gameState[side];
+    const handHtml = p.hand.map(c=>gameCardHtml(side,'hand',c)).join('');
+    const bfHtml = p.battlefield.map(c=>gameCardHtml(side,'battlefield',c)).join('');
+    const gyHtml = p.graveyard.map(c=>gameCardHtml(side,'graveyard',c)).join('');
+    const exHtml = p.exile.map(c=>gameCardHtml(side,'exile',c)).join('');
+    const cmdHtml = p.command.map(c=>gameCardHtml(side,'command',c)).join('');
+    return `
+    <div class="player-panel" data-side="${side}">
+      <div class="player-panel-header">
+        <h3>${side === 'claude' ? '🤖' : '🙂'} ${escapeHtml(p.name)}</h3>
+        <div class="counters-row">
+          <div class="life-control">
+            <button data-act="life-down">−</button>
+            <span class="life-num" id="life-${side}">${p.life}</span>
+            <button data-act="life-up">+</button>
+          </div>
+          ${counterControl(side,'poison','☠','Veleno')}
+          ${counterControl(side,'energy','⚡','Energia')}
+          ${counterControl(side,'experience','★','Esperienza')}
+        </div>
+      </div>
+      <div class="zone-row">
+        <div class="zone-block" style="flex:0 0 auto;">
+          <div class="zone-title">Grimorio</div>
+          <div class="library-stack" data-act="draw" data-dropzone="library">
+            <span class="num">${p.library.length}</span>
+            <span class="lbl">pesca</span>
+          </div>
+        </div>
+        <div class="zone-block" style="flex:0 0 auto;">
+          <div class="zone-title">
+            Comandante
+            ${p.command.length ? `<a href="${edhrecCombosLink(p.command[0].name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per ${escapeAttr(p.command[0].name)}">🔗 Combo</a>` : ''}
+          </div>
+          <div class="zone-cards ${p.command.length?'':'empty-zone'}" data-dropzone="command" style="min-width:60px;">${cmdHtml}</div>
+        </div>
+        <div class="zone-block">
+          <div class="zone-title">Mano <span class="zone-count">${p.hand.length}</span></div>
+          <div class="zone-cards ${p.hand.length?'':'empty-zone'}" data-dropzone="hand">${handHtml}</div>
+        </div>
+      </div>
+      <div class="zone-row">
+        <div class="zone-block" style="flex:1 1 100%;">
+          <div class="zone-title">
+            Campo di battaglia <span class="zone-count">${p.battlefield.length}</span>
+            <button class="icon-btn" data-act="add-token" style="font-size:11px;" title="Crea pedina">+ pedina</button>
+            ${p.attacking.length ? `<button class="icon-btn attack-declare-btn" data-act="clear-attack" style="font-size:11px;">annulla attacco (${p.attacking.length})</button>` : ''}
+          </div>
+          <div class="zone-cards battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
+        </div>
+      </div>
+      <div class="zone-row">
+        <div class="zone-block">
+          <div class="zone-title">
+            Cimitero <span class="zone-count">${p.graveyard.length}</span>
+            ${p.graveyard.length ? `<button class="icon-btn" data-act="toggle-graveyard" style="font-size:11px;">${p.graveyardOpen?'nascondi':'mostra'}</button>` : ''}
+          </div>
+          <div class="graveyard-list ${p.graveyardOpen?'show':''}" data-dropzone="graveyard">${gyHtml}</div>
+        </div>
+        <div class="zone-block">
+          <div class="zone-title">
+            Esilio <span class="zone-count">${p.exile.length}</span>
+            ${p.exile.length ? `<button class="icon-btn" data-act="toggle-exile" style="font-size:11px;">${p.exileOpen?'nascondi':'mostra'}</button>` : ''}
+          </div>
+          <div class="graveyard-list ${p.exileOpen?'show':''}" data-dropzone="exile">${exHtml}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderGame(){
+    if(!gameState) return;
+    const board = $('#game-board');
+    board.innerHTML = `
+      <div id="turn-timer" class="turn-timer-bar"></div>
+      ${playerPanelHtml('claude')}
+      ${playerPanelHtml('player')}
+      <div class="game-log-panel">
+        <div class="zone-title">Cronologia partita</div>
+        <div id="game-log-list" class="game-log-list"></div>
+      </div>
+      <button class="ghost" id="btn-end-game">Termina partita</button>
+    `;
+    renderTimerDisplay();
+    renderLogOnly();
+    board.querySelectorAll('.player-panel').forEach(panel=>{
+      const side = panel.dataset.side;
+      panel.querySelectorAll('[data-act="life-up"]').forEach(b=> b.addEventListener('click', ()=>{ gameState[side].life++; pulseLife(side); renderLifeOnly(side); logEvent(`${gameState[side].name}: vita → ${gameState[side].life}`); }));
+      panel.querySelectorAll('[data-act="life-down"]').forEach(b=> b.addEventListener('click', ()=>{ gameState[side].life--; pulseLife(side); renderLifeOnly(side); logEvent(`${gameState[side].name}: vita → ${gameState[side].life}`); }));
+      const COUNTER_LABELS = { poison:'Veleno', energy:'Energia', experience:'Esperienza' };
+      ['poison','energy','experience'].forEach(key=>{
+        panel.querySelectorAll(`[data-act="${key}-up"]`).forEach(b=> b.addEventListener('click', ()=>{ gameState[side][key]++; logEvent(`${gameState[side].name}: ${COUNTER_LABELS[key]} → ${gameState[side][key]}`); renderGame(); }));
+        panel.querySelectorAll(`[data-act="${key}-down"]`).forEach(b=> b.addEventListener('click', ()=>{ gameState[side][key] = Math.max(0, gameState[side][key]-1); logEvent(`${gameState[side].name}: ${COUNTER_LABELS[key]} → ${gameState[side][key]}`); renderGame(); }));
+      });
+      panel.querySelectorAll('[data-act="draw"]').forEach(b=> b.addEventListener('click', (e)=>{
+        const p = gameState[side];
+        if(p.library.length === 0){ toast(`${p.name}: il mazzo è vuoto!`); return; }
+        e.currentTarget.classList.add('pulse-once');
+        const card = p.library.shift();
+        p.hand.push(card);
+        logEvent(`${p.name} pesca una carta.`);
+        renderGame();
+      }));
+      panel.querySelectorAll('[data-act="toggle-graveyard"]').forEach(b=> b.addEventListener('click', ()=>{
+        gameState[side].graveyardOpen = !gameState[side].graveyardOpen;
+        renderGame();
+      }));
+      panel.querySelectorAll('[data-act="toggle-exile"]').forEach(b=> b.addEventListener('click', ()=>{
+        gameState[side].exileOpen = !gameState[side].exileOpen;
+        renderGame();
+      }));
+      panel.querySelectorAll('[data-act="add-token"]').forEach(b=> b.addEventListener('click', ()=> openTokenPrompt(side)));
+      panel.querySelectorAll('[data-act="clear-attack"]').forEach(b=> b.addEventListener('click', ()=>{
+        gameState[side].attacking = [];
+        renderGame();
+      }));
+      panel.querySelectorAll('.game-card').forEach(cardEl=>{
+        const zone = cardEl.dataset.zone;
+        const cuid = cardEl.dataset.uid;
+        cardEl.querySelectorAll('button[data-act]').forEach(btn=>{
+          btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            handleCardAction(side, zone, cuid, btn.dataset.act);
+          });
+        });
+        initCardDrag(cardEl);
+      });
+    });
+    const endBtn = $('#btn-end-game');
+    if(endBtn) endBtn.addEventListener('click', endGame);
+    lastMovedUid = null;
+  }
+
+  /* Aggiorna solo il numero dei punti vita, senza ridisegnare tutto il
+     tavolo: evita di interrompere altre animazioni in corso. */
+  function renderLifeOnly(side){
+    const el = $(`#life-${side}`);
+    if(el) el.textContent = gameState[side].life;
+  }
+  function pulseLife(side){
+    const el = $(`#life-${side}`);
+    if(!el) return;
+    el.classList.remove('life-pulse');
+    void el.offsetWidth; // riavvia l'animazione anche se già applicata
+    el.classList.add('life-pulse');
+  }
+
+  function openTokenPrompt(side){
+    const name = window.prompt('Nome della pedina (es. "Pedina Soldato 1/1"):', '');
+    if(!name || !name.trim()) return;
+    const p = gameState[side];
+    const token = { uid: uid(), name: name.trim(), imageUrl:'', tapped:false, isCommander:false, isToken:true };
+    p.battlefield.push(token);
+    logEvent(`${p.name} crea una pedina: ${name.trim()}.`);
+    renderGame();
+  }
+
+  function handleCardAction(side, fromZone, cuid, action){
+    const p = gameState[side];
+    if(action === 'tap'){
+      const card = p[fromZone].find(c=>c.uid===cuid);
+      if(card){ card.tapped = !card.tapped; logEvent(`${p.name}: ${card.name} ${card.tapped?'tappata':'sbloccata'}.`); }
+      renderGame();
+      return;
+    }
+    if(action === 'attack'){
+      const idx = p.attacking.indexOf(cuid);
+      const card = p[fromZone].find(c=>c.uid===cuid);
+      if(idx >= 0){
+        p.attacking.splice(idx,1);
+      }else{
+        p.attacking.push(cuid);
+        if(card) logEvent(`${p.name} dichiara in attacco: ${card.name}.`);
+      }
+      renderGame();
+      return;
+    }
+    const zoneMap = {
+      toBattlefield:'battlefield', toGraveyard:'graveyard', toExile:'exile',
+      toHand:'hand', toLibrary:'library', toCommand:'command'
+    };
+    const targetZone = zoneMap[action];
+    if(!targetZone) return;
+    moveCardToZone(side, fromZone, cuid, targetZone, action==='toLibrary');
+  }
+
+  function moveCardToZone(side, fromZone, cuid, toZone, shuffleAfter){
+    const p = gameState[side];
+    const src = p[fromZone];
+    const idx = src.findIndex(c => c.uid === cuid);
+    if(idx < 0) return;
+    const [card] = src.splice(idx, 1);
+    if(toZone !== 'battlefield') card.tapped = false;
+    const atkIdx = p.attacking.indexOf(cuid);
+    if(atkIdx >= 0) p.attacking.splice(atkIdx,1);
+    p[toZone].push(card);
+    if(shuffleAfter) shuffleArray(p.library);
+    logEvent(`${p.name}: ${card.name} → ${ZONE_LABELS[toZone] || toZone}.`);
+    lastMovedUid = card.uid;
+    renderGame();
+  }
+
+  /* ---------- Trascina e rilascia le carte (mouse e tocco unificati) ----------
+     Usa i Pointer Event, cos\u00ec la stessa logica funziona sia con il mouse su
+     desktop sia con il dito su Android: una piccola "carta fantasma" segue il
+     puntatore mentre trascini, e la zona di destinazione si illumina. */
+  let lastMovedUid = null;
+  let dragCtx = null;
+
+  function initCardDrag(cardEl){
+    cardEl.addEventListener('pointerdown', (e)=>{
+      if(e.target.closest('button')) return;
+      const side = cardEl.dataset.side;
+      const zone = cardEl.dataset.zone;
+      const cuid = cardEl.dataset.uid;
+      const rect = cardEl.getBoundingClientRect();
+      dragCtx = {
+        side, zone, cuid, startX: e.clientX, startY: e.clientY,
+        offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+        ghost: null, moved: false
+      };
+      cardEl.setPointerCapture(e.pointerId);
+    });
+    cardEl.addEventListener('pointermove', (e)=>{
+      if(!dragCtx || dragCtx.cuid !== cardEl.dataset.uid) return;
+      const dx = e.clientX - dragCtx.startX, dy = e.clientY - dragCtx.startY;
+      if(!dragCtx.moved && Math.hypot(dx,dy) < 8) return;
+      if(!dragCtx.moved){
+        dragCtx.moved = true;
+        const ghost = cardEl.cloneNode(true);
+        ghost.classList.add('drag-ghost');
+        ghost.querySelectorAll('.card-mini-actions').forEach(el=>el.remove());
+        document.body.appendChild(ghost);
+        dragCtx.ghost = ghost;
+        cardEl.classList.add('drag-source');
+      }
+      if(dragCtx.ghost){
+        dragCtx.ghost.style.left = (e.clientX - dragCtx.offsetX) + 'px';
+        dragCtx.ghost.style.top = (e.clientY - dragCtx.offsetY) + 'px';
+      }
+      document.querySelectorAll('[data-dropzone].drop-target-hover').forEach(z=>z.classList.remove('drop-target-hover'));
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const zoneEl = under && under.closest('[data-dropzone]');
+      if(zoneEl) zoneEl.classList.add('drop-target-hover');
+    });
+    cardEl.addEventListener('pointerup', (e)=>{
+      if(!dragCtx || dragCtx.cuid !== cardEl.dataset.uid){ dragCtx = null; return; }
+      const wasDragging = dragCtx.moved;
+      if(dragCtx.ghost) dragCtx.ghost.remove();
+      document.querySelectorAll('[data-dropzone].drop-target-hover').forEach(z=>z.classList.remove('drop-target-hover'));
+      if(wasDragging){
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const zoneEl = under && under.closest('[data-dropzone]');
+        const panelEl = under && under.closest('.player-panel');
+        if(zoneEl && panelEl && panelEl.dataset.side === dragCtx.side){
+          const toZone = zoneEl.dataset.dropzone;
+          if(toZone !== dragCtx.zone){
+            moveCardToZone(dragCtx.side, dragCtx.zone, dragCtx.cuid, toZone, toZone==='library');
+          }
+        }
+      }
+      dragCtx = null;
+    });
+  }
+
+
+
+  /* Una carta è considerata "la stessa" solo se coincidono nome, espansione
+     (codice set) e stato foil. Copie della stessa carta ma di un'altra
+     espansione, o foil contro non-foil, restano voci separate. */
+  function findDuplicateIndex(name, setCode, foil){
+    const n = (name||'').trim().toLowerCase();
+    const s = (setCode||'').trim().toUpperCase();
+    return cards.findIndex(c=>
+      (c.name||'').trim().toLowerCase() === n &&
+      (c.setCode||'').trim().toUpperCase() === s &&
+      !!c.foil === !!foil
+    );
+  }
+
+  function mergeQuantityIntoExisting(idx, qty, extra){
+    extra = extra || {};
+    cards[idx].quantity = (parseInt(cards[idx].quantity)||1) + (parseInt(qty)||1);
+    if(!cards[idx].imageUrl && extra.imageUrl) cards[idx].imageUrl = extra.imageUrl;
+    if(extra.priceEur != null) cards[idx].priceEur = extra.priceEur;
+    if(extra.priceFoilEur != null) cards[idx].priceFoilEur = extra.priceFoilEur;
+    if(extra.priceUpdated) cards[idx].priceUpdated = extra.priceUpdated;
+    if(!cards[idx].scryfallId && extra.scryfallId) cards[idx].scryfallId = extra.scryfallId;
+    if(!cards[idx].scryfallUri && extra.scryfallUri) cards[idx].scryfallUri = extra.scryfallUri;
+  }
+
+
+  function toast(msg, ms=2600){
+    const t = $('#toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(()=> t.style.display='none', ms);
+  }
+
+  function setImportStatus(msg, kind){
+    const el = $('#import-status');
+    el.textContent = msg || '';
+    el.className = kind || '';
+  }
+
+  function updateSyncIndicator(state, customMsg){
+    const el = $('#sync-status');
+    if(!el) return;
+    el.className = 'sync-status ' + state;
+    if(customMsg){ el.textContent = customMsg; return; }
+    if(state === 'saving') el.textContent = '☁ Salvataggio in corso…';
+    else if(state === 'ok') el.textContent = '☁ Tutto salvato';
+    else if(state === 'error') el.textContent = '⚠ Non sincronizzato — nuovo tentativo…';
+  }
+
+  /* ---------------- Persistence ----------------
+     Ogni modifica (aggiunta, modifica, eliminazione, import) viene salvata
+     immediatamente, senza attese. Se il salvataggio fallisce (es. offline),
+     il sistema ritenta automaticamente ogni pochi secondi e appena la
+     connessione torna disponibile, e avvisa prima di lasciare la pagina se
+     ci sono modifiche non ancora sincronizzate.
+
+     Backend: se FIREBASE_CONFIG è compilato in cima al file, il raccoglitore
+     salva su un tuo progetto Firebase personale (funziona ovunque apri il
+     file). Altrimenti usa il salvataggio integrato di Claude (funziona solo
+     dentro Claude.ai). */
+  async function loadCards(){
+    updateSyncIndicator('saving', '☁ Caricamento del raccoglitore…');
+    try{
+      if(useFirebase){
+        const snap = await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc).get();
+        const raw = snap.exists ? snap.data() : {};
+        // formato compatto (nuovo, leggibile anche dal service worker in background)
+        // oppure formato "classico" con i campi diretti nel documento (dati più vecchi)
+        const data = (raw && typeof raw.data === 'string') ? JSON.parse(raw.data) : raw;
+        cards = Array.isArray(data.cards) ? data.cards : [];
+        moxfieldUsername = data.moxfieldUsername || '';
+        deckLinks = Array.isArray(data.deckLinks) ? data.deckLinks : [];
+      }else{
+        const res = await window.storage.get('collection', false);
+        const data = res && res.value ? JSON.parse(res.value) : {};
+        cards = Array.isArray(data) ? data : (Array.isArray(data.cards) ? data.cards : []);
+        moxfieldUsername = (data && data.moxfieldUsername) || '';
+        deckLinks = (data && Array.isArray(data.deckLinks)) ? data.deckLinks : [];
+      }
+      updateSyncIndicator('ok');
+    }catch(e){
+      cards = [];
+      updateSyncIndicator('error', '⚠ Impossibile contattare il cloud');
+      toast('Non riesco a verificare i dati salvati in precedenza. Se il raccoglitore era già popolato, ricarica la pagina prima di modificarlo per non rischiare di sovrascriverlo.', 7000);
+    }
+    renderDecksSection();
+    render();
+    maybeAutoRefreshPrices();
+  }
+
+  function scheduleSave(){
+    dirty = true;
+    saveCards();
+  }
+
+  async function saveCards(){
+    if(saveInFlight){ saveQueued = true; return; }
+    saveInFlight = true;
+    updateSyncIndicator('saving');
+    try{
+      if(useFirebase){
+        // Formato compatto: tutto in un unico campo testuale "data". Rende il
+        // documento leggibile e scrivibile anche dal service worker con una
+        // semplice chiamata REST, senza dover includere l'intera libreria
+        // Firebase in background — è quello che permette all'aggiornamento
+        // prezzi di proseguire anche ad app chiusa (vedi più sotto).
+        await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc)
+          .set({ data: JSON.stringify({ cards, moxfieldUsername, deckLinks }), updatedAt: new Date().toISOString() });
+      }else{
+        const res = await window.storage.set('collection', JSON.stringify({ cards, moxfieldUsername, deckLinks }), false);
+        if(!res) throw new Error('empty response');
+      }
+      storageAvailable = true;
+      dirty = false;
+      updateSyncIndicator('ok');
+      clearTimeout(retryTimer);
+    }catch(e){
+      storageAvailable = false;
+      updateSyncIndicator('error');
+      scheduleRetry();
+    }finally{
+      saveInFlight = false;
+      if(saveQueued){ saveQueued = false; saveCards(); }
+    }
+  }
+
+  function scheduleRetry(){
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(()=>{ if(dirty) saveCards(); }, 5000);
+  }
+
+  window.addEventListener('online', ()=>{ if(dirty) saveCards(); });
+
+  window.addEventListener('beforeunload', (e)=>{
+    if(dirty || saveInFlight){
+      e.preventDefault();
+      e.returnValue = 'Ci sono modifiche al raccoglitore non ancora salvate nel cloud. Vuoi davvero uscire?';
+      return e.returnValue;
+    }
+  });
+
+  /* ---------------- Derived data ---------------- */
+  function allSets(){
+    const s = new Set(cards.map(c => c.setName || 'Senza espansione'));
+    return Array.from(s).sort((a,b)=>a.localeCompare(b,'it'));
+  }
+
+  /* Ordinamento: per nome (default) oppure per prezzo, crescente o decrescente.
+     Le carte senza prezzo noto finiscono sempre in fondo, in entrambi i casi,
+     invece che mescolarsi in cima quando si ordina "dal più economico". */
+  function sortComparator(a, b){
+    if(sortMode === 'price-desc' || sortMode === 'price-asc'){
+      const pa = cardPrice(a);
+      const pb = cardPrice(b);
+      if(sortMode === 'price-desc'){
+        const av = pa == null ? -Infinity : pa;
+        const bv = pb == null ? -Infinity : pb;
+        if(bv !== av) return bv - av;
+      }else{
+        const av = pa == null ? Infinity : pa;
+        const bv = pb == null ? Infinity : pb;
+        if(av !== bv) return av - bv;
+      }
+    }else if(sortMode === 'qty-desc' || sortMode === 'qty-asc'){
+      const qa = parseInt(a.quantity) || 1;
+      const qb = parseInt(b.quantity) || 1;
+      if(sortMode === 'qty-desc'){
+        if(qb !== qa) return qb - qa;
+      }else{
+        if(qa !== qb) return qa - qb;
+      }
+    }
+    return a.name.localeCompare(b.name,'it') || (a.setName||'').localeCompare(b.setName||'','it');
+  }
+
+  function visibleCards(){
+    return cards.filter(c=>{
+      if(!activeRarities.has(c.rarity)) return false;
+      // Filtro tipo: se nessun tipo è selezionato, non filtra (mostra tutto).
+      // Se uno o più tipi sono selezionati, mostra SOLO quelli, escludendo gli altri.
+      if(activeTypes.size > 0 && !activeTypes.has(c.type || 'altro')) return false;
+      if(setFilter && (c.setName || 'Senza espansione') !== setFilter) return false;
+      if(searchTerm && !c.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      return true;
+    }).sort(sortComparator);
+  }
+
+  function totalCopies(list){ return list.reduce((s,c)=> s + (parseInt(c.quantity)||1), 0); }
+  function totalValue(list){
+    return list.reduce((s,c)=>{
+      const p = c.foil ? (c.priceFoilEur ?? c.priceEur) : c.priceEur;
+      return s + (typeof p === 'number' ? p * (parseInt(c.quantity)||1) : 0);
+    },0);
+  }
+
+  /* ---------------- Rendering ----------------
+     Due assi indipendenti: displayMode (list/grid) decide come viene
+     disegnata ogni singola carta; groupMode (none/set/type/price) decide se
+     e come le carte vengono suddivise in sezioni. Si possono combinare
+     liberamente, es. "Griglia" + "Per prezzo". */
+  function contentForItems(items){
+    return displayMode === 'grid' ? gridHtml(items) : items.map(rowHtmlFor).join('');
+  }
+
+  function groupedGeneric(list, groupKeyFn, labelFn, orderedKeys){
+    const groups = {};
+    list.forEach(c=>{
+      const key = groupKeyFn(c);
+      (groups[key] = groups[key]||[]).push(c);
+    });
+    const keys = orderedKeys
+      ? orderedKeys.filter(k=> groups[k] && groups[k].length)
+      : Object.keys(groups).sort((a,b)=>a.localeCompare(b,'it'));
+    return keys.map(key=>{
+      const items = groups[key];
+      const label = labelFn ? labelFn(key) : key;
+      return `<div class="group-header">${escapeHtml(label)} <span class="count">${items.length} voci · ${totalCopies(items)} carte</span></div>${contentForItems(items)}`;
+    }).join('');
+  }
+
+  function render(){
+    renderFilters();
+    renderStats();
+    const list = visibleCards();
+    const main = $('#main');
+    if(cards.length === 0){
+      main.innerHTML = emptyStateHtml();
+      return;
+    }
+    if(list.length === 0){
+      main.innerHTML = `<div class="empty-state"><h3>Nessuna carta corrisponde ai filtri</h3><p>Prova a modificare la ricerca o i filtri di rarità, tipo ed espansione.</p></div>`;
+      return;
+    }
+    if(groupMode === 'set'){
+      main.innerHTML = groupedGeneric(list, c => c.setName || 'Senza espansione', k => k, null);
+    }else if(groupMode === 'type'){
+      main.innerHTML = groupedGeneric(list, c => c.type || 'altro', k => (TYPE_META[k]||TYPE_META.altro).label, Object.keys(TYPE_META));
+    }else if(groupMode === 'price'){
+      main.innerHTML = groupedGeneric(list, priceBucketOf, k => (PRICE_BUCKET_META[k]||PRICE_BUCKET_META.unknown).label, PRICE_BUCKET_ORDER);
+    }else{
+      main.innerHTML = displayMode === 'grid' ? gridHtml(list) : listHtml(list);
+    }
+    attachRowEvents();
+  }
+
+
+  function emptyStateHtml(){
+    return `<div class="empty-state">
+      <div class="gem-row">
+        <span style="background:var(--rarity-common)"></span>
+        <span style="background:var(--rarity-uncommon)"></span>
+        <span style="background:var(--rarity-rare)"></span>
+        <span style="background:var(--rarity-mythic)"></span>
+      </div>
+      <h3>Il raccoglitore è vuoto</h3>
+      <p>Aggiungi la tua prima carta a mano, incolla un link Scryfall/EDHREC/Moxfield/Archidekt qui sopra, oppure importa una lista in blocco.</p>
+    </div>`;
+  }
+
+  function renderFilters(){
+    const wrap = $('#rarity-filters');
+    wrap.innerHTML = Object.entries(RARITY_META).map(([key,meta])=>`
+      <div class="chip ${activeRarities.has(key)?'active':''}" data-rarity="${key}">
+        <span class="dot" style="background:${meta.color}"></span>${meta.label}
+      </div>`).join('');
+    wrap.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const r = chip.dataset.rarity;
+        if(activeRarities.has(r)) activeRarities.delete(r); else activeRarities.add(r);
+        render();
+      });
+    });
+
+    const typeWrap = $('#type-filters');
+    typeWrap.innerHTML = Object.entries(TYPE_META).map(([key,meta])=>`
+      <div class="chip ${activeTypes.has(key)?'active':''}" data-type="${key}">${meta.label}</div>`).join('');
+    typeWrap.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const t = chip.dataset.type;
+        if(activeTypes.has(t)) activeTypes.delete(t); else activeTypes.add(t);
+        render();
+      });
+    });
+
+    const setSel = $('#set-filter');
+    const current = setSel.value;
+    setSel.innerHTML = `<option value="">Tutte le espansioni</option>` +
+      allSets().map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    setSel.value = current;
+  }
+
+  function renderStats(){
+    $('#stat-total').textContent = totalCopies(cards);
+    $('#stat-unique').textContent = cards.length;
+    $('#stat-value').textContent = '€' + totalValue(cards).toFixed(2);
+  }
+
+  function rarityBadge(rarity){
+    const m = RARITY_META[rarity] || RARITY_META.common;
+    return `<div class="rarity-letter" style="color:${m.color}; border-color:${m.color}88;" title="${m.label}">${m.letter}</div>`;
+  }
+
+  function priceCellHtml(c){
+    const price = c.foil ? (c.priceFoilEur ?? c.priceEur) : c.priceEur;
+    const priceTxt = typeof price === 'number' ? '€'+price.toFixed(2) : '—';
+    let staleTxt = '';
+    if(c.priceUpdated){
+      const days = Math.floor((Date.now() - new Date(c.priceUpdated).getTime())/86400000);
+      staleTxt = days === 0 ? 'oggi' : days+'g fa';
+    }
+    let trendTxt = '';
+    if(typeof c.priceTrend === 'number' && c.priceTrend !== 0){
+      const up = c.priceTrend > 0;
+      trendTxt = `<span class="trend ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(c.priceTrend).toFixed(1)}%</span>`;
+    }
+    return `<span>${priceTxt}</span>${trendTxt}${staleTxt?`<span class="stale">${staleTxt}</span>`:''}`;
+  }
+
+  function cardmarketLink(c){
+    const q = encodeURIComponent(c.name);
+    return `https://www.cardmarket.com/it/Magic/Products/Search?searchString=${q}`;
+  }
+
+  /* Link diretto alla pagina della carta su Scryfall: usa l'indirizzo esatto
+     salvato al momento dell'inserimento/aggiornamento; se una carta più
+     vecchia non lo ha ancora, ripiega su una ricerca per nome. */
+  function scryfallCardLink(c){
+    if(c.scryfallUri) return c.scryfallUri;
+    return `https://scryfall.com/search?q=${encodeURIComponent('!"'+c.name+'"')}`;
+  }
+
+  function listHtml(list){
+    const rows = list.map(rowHtmlFor).join('');
+    return `<div class="list-row header-row">
+        <div></div><div></div><div>Nome</div><div>Set</div><div>Rarità</div><div>Qtà</div><div>Prezzo</div><div>Mercato</div><div></div>
+      </div>${rows}`;
+  }
+
+  function gridHtml(list){
+    const tiles = list.map(c=>{
+      const m = RARITY_META[c.rarity] || RARITY_META.common;
+      const t = TYPE_META[c.type] || TYPE_META.altro;
+      const bg = c.imageUrl ? `style="background-image:url('${escapeAttr(c.imageUrl)}')"` : '';
+      const missingData = !c.imageUrl || (c.foil ? (c.priceFoilEur==null) : (c.priceEur==null));
+      return `<div class="card-tile" data-id="${c.id}">
+        <div class="rarity-corner" style="background:${m.color}"></div>
+        <a class="tile-thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+        <div class="tile-name">${escapeHtml(c.name)}${c.foil?' <span class="foil-tag">FOIL</span>':''}</div>
+        <div class="tile-set">${escapeHtml(c.setCode || c.setName || '—')} · ×${c.quantity||1} · ${escapeHtml(t.label)}</div>
+        <div class="tile-bottom">
+          <span class="tile-price">${priceCellHtml(c)}</span>
+          <div class="tile-actions">
+            <a class="cm-link" href="${cardmarketLink(c)}" target="_blank" rel="noopener" title="Cardmarket">↗</a>
+            <button class="icon-btn ${missingData?'needs-refresh':''}" data-action="refresh" title="Aggiorna immagine/prezzo da Scryfall">⟳</button>
+            <button class="icon-btn" data-action="edit" title="Modifica">✎</button>
+            <button class="icon-btn" data-action="delete" title="Elimina">✕</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="grid-wrap">${tiles}</div>`;
+  }
+
+  function rowHtmlFor(c){
+    const m = RARITY_META[c.rarity] || RARITY_META.common;
+    const t = TYPE_META[c.type] || TYPE_META.altro;
+    const bg = c.imageUrl ? `style="background-image:url('${escapeAttr(c.imageUrl)}')"` : '';
+    const missingData = !c.imageUrl || (c.foil ? (c.priceFoilEur==null) : (c.priceEur==null));
+    return `<div class="list-row" data-id="${c.id}">
+        <div class="rarity-bar" style="background:${m.color}"></div>
+        <a class="thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+        <div class="card-name">${escapeHtml(c.name)}${c.foil?'<span class="foil-tag">FOIL</span>':''}<span class="type-tag">${escapeHtml(t.label)}</span></div>
+        <div class="set-cell">${escapeHtml(c.setCode || c.setName || '—')}</div>
+        <div class="rarity-cell">${rarityBadge(c.rarity)}</div>
+        <div class="qty-cell">×${c.quantity||1}</div>
+        <div class="price-cell">${priceCellHtml(c)}</div>
+        <div class="market-cell"><a class="cm-link" href="${cardmarketLink(c)}" target="_blank" rel="noopener" title="Verifica su Cardmarket">Cardmarket ↗</a></div>
+        <div class="actions-cell">
+          <button class="icon-btn ${missingData?'needs-refresh':''}" data-action="refresh" title="Aggiorna immagine/prezzo da Scryfall">⟳</button>
+          <button class="icon-btn" data-action="edit" title="Modifica">✎</button>
+          <button class="icon-btn" data-action="delete" title="Elimina">✕</button>
+        </div>
+      </div>`;
+  }
+
+  function attachRowEvents(){
+    $$('[data-action="edit"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const id = e.target.closest('[data-id]').dataset.id;
+        openEditModal(id);
+      });
+    });
+    $$('[data-action="delete"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const id = e.target.closest('[data-id]').dataset.id;
+        if(confirm('Eliminare questa voce dal raccoglitore?')){
+          cards = cards.filter(c=>c.id!==id);
+          scheduleSave(); render();
+        }
+      });
+    });
+    $$('[data-action="refresh"]').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const id = e.target.closest('[data-id]').dataset.id;
+        refreshSingleCard(id);
+      });
+    });
+    $$('.hoverable').forEach(el=>{
+      el.addEventListener('mouseenter', showPreview);
+      el.addEventListener('mousemove', movePreview);
+      el.addEventListener('mouseleave', hidePreview);
+    });
+  }
+
+  function showPreview(e){
+    const src = e.currentTarget.dataset.img;
+    if(!src) return;
+    const prev = $('#hover-preview');
+    $('#hover-preview-img').src = src;
+    prev.style.display = 'block';
+    movePreview(e);
+  }
+  function movePreview(e){
+    const prev = $('#hover-preview');
+    if(prev.style.display !== 'block') return;
+    let x = e.clientX + 20, y = e.clientY + 20;
+    if(x + 220 > window.innerWidth) x = e.clientX - 240;
+    if(y + 310 > window.innerHeight) y = window.innerHeight - 320;
+    prev.style.left = x+'px';
+    prev.style.top = y+'px';
+  }
+  function hidePreview(){ $('#hover-preview').style.display = 'none'; }
+
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function escapeAttr(s){ return escapeHtml(s).replace(/`/g,'&#96;'); }
+
+  /* ---------------- Autocomplete ("ricerca per nome" nel modale) ---------------- */
+  let acItems = [];
+  let acActiveIndex = -1;
+  let acDebounceTimer = null;
+  let acRequestToken = 0;
+
+  function debounceAc(fn, delay){
+    return (...args)=>{
+      clearTimeout(acDebounceTimer);
+      acDebounceTimer = setTimeout(()=>fn(...args), delay);
+    };
+  }
+
+  async function fetchAutocompleteNames(query){
+    const res = await fetch('https://api.scryfall.com/cards/autocomplete?q=' + encodeURIComponent(query));
+    if(!res.ok) return [];
+    const json = await res.json();
+    return (json.data || []).slice(0, 8);
+  }
+
+  /* Cerca tra i nomi stampati in italiano: utile perché l'autocompletamento
+     Scryfall standard suggerisce solo i nomi ufficiali inglesi. Restituisce
+     direttamente oggetti carta completi (con il nome italiano in printed_name),
+     da unire ai risultati dell'autocompletamento inglese. */
+  async function fetchItalianNameMatches(query){
+    try{
+      const res = await fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(query + ' lang:it') + '&unique=cards&order=name');
+      if(!res.ok) return [];
+      const json = await res.json();
+      return (json.data || []).slice(0, 5);
+    }catch(e){ return []; }
+  }
+
+  async function fetchCardsByNames(names){
+    if(names.length === 0) return [];
+    const res = await fetch('https://api.scryfall.com/cards/collection', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({identifiers: names.map(n=>({name:n}))})
+    });
+    if(!res.ok) return [];
+    const json = await res.json();
+    // preserve the original autocomplete order where possible
+    const byName = {};
+    (json.data||[]).forEach(c=>{ byName[c.name.toLowerCase()] = c; });
+    return names.map(n=> byName[n.toLowerCase()]).filter(Boolean);
+  }
+
+  function acRenderLoading(){
+    $('#ac-list').innerHTML = `<div class="autocomplete-source">Scryfall — nomi inglesi e italiani</div>
+      <div class="autocomplete-item ac-loading">Ricerca in corso…</div>`;
+    $('#ac-list').classList.add('show');
+  }
+
+  function acRenderEmpty(){
+    $('#ac-list').innerHTML = `<div class="autocomplete-source">Scryfall — nomi inglesi e italiani</div>
+      <div class="autocomplete-item ac-empty">Nessuna carta trovata</div>`;
+    $('#ac-list').classList.add('show');
+  }
+
+  function acRenderResults(list){
+    acItems = list;
+    acActiveIndex = -1;
+    if(list.length === 0){ acRenderEmpty(); return; }
+    const rows = list.map((c, i)=>{
+      const m = RARITY_META[c.rarity] || RARITY_META.common;
+      const img = (c.image_uris && c.image_uris.small) ||
+                  (c.card_faces && c.card_faces[0] && c.card_faces[0].image_uris && c.card_faces[0].image_uris.small) || '';
+      const isItalian = c.lang === 'it' && c.printed_name;
+      const displayName = isItalian ? `${escapeHtml(c.printed_name)} <span class="ac-en-name">(${escapeHtml(c.name)})</span>` : escapeHtml(c.name);
+      return `<div class="autocomplete-item" data-index="${i}">
+        <div class="ac-thumb" style="${img?`background-image:url('${escapeAttr(img)}')`:''}"></div>
+        <div style="flex:1;">
+          <div>${displayName}${isItalian?' <span class="ac-lang-tag">IT</span>':''}</div>
+          <div class="ac-meta">${escapeHtml(c.set_name||'')} · ${m.label}${typeof c.prices?.eur==='number'||c.prices?.eur?` · €${parseFloat(c.prices.eur).toFixed(2)}`:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    $('#ac-list').innerHTML = `<div class="autocomplete-source">Scryfall — nomi inglesi e italiani</div>${rows}`;
+    $('#ac-list').classList.add('show');
+    $$('#ac-list .autocomplete-item[data-index]').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        selectAutocompleteItem(parseInt(el.dataset.index));
+      });
+    });
+  }
+
+  function acClose(){
+    $('#ac-list').classList.remove('show');
+    acItems = [];
+    acActiveIndex = -1;
+  }
+
+  function acHighlight(index){
+    const els = $$('#ac-list .autocomplete-item[data-index]');
+    els.forEach(el=>el.classList.remove('active'));
+    if(index >= 0 && els[index]){
+      els[index].classList.add('active');
+      els[index].scrollIntoView({block:'nearest'});
+    }
+  }
+
+  /* ---------------- Tendina "Espansione" (tutte le stampe reali della carta) ---------------- */
+  let currentPrintings = [];
+  let selectedPrintingValue = 'placeholder'; // 'placeholder' | 'custom' | indice stringa
+
+  function getSelectedSetName(){
+    if(selectedPrintingValue === 'custom') return $('#f-set-manual').value.trim();
+    const idx = parseInt(selectedPrintingValue);
+    if(!isNaN(idx) && currentPrintings[idx]) return currentPrintings[idx].set_name;
+    return '';
+  }
+
+  function applyPrinting(p){
+    if(!p) return;
+    $('#f-setcode').value = (p.set||'').toUpperCase();
+    if(RARITY_META[p.rarity]) $('#f-rarity').value = p.rarity;
+    const img = (p.image_uris && p.image_uris.normal) ||
+                (p.card_faces && p.card_faces[0] && p.card_faces[0].image_uris && p.card_faces[0].image_uris.normal) || '';
+    if(img) $('#f-image').value = img;
+    $('#f-scryfallid').value = p.id || '';
+    if(p.prices && p.prices.eur != null) $('#f-price').value = parseFloat(p.prices.eur);
+    $('#f-pricefoileur').value = (p.prices && p.prices.eur_foil != null) ? parseFloat(p.prices.eur_foil) : '';
+    const typeLine = p.type_line || (p.card_faces && p.card_faces[0] && p.card_faces[0].type_line) || '';
+    $('#f-type').value = detectTypeFromLine(typeLine);
+  }
+
+  function renderSetPickerDisplay(){
+    const display = $('#f-set-display');
+    if(!display) return;
+    if(selectedPrintingValue === 'placeholder'){
+      display.textContent = '— scrivi il nome della carta per vedere le espansioni —';
+    }else if(selectedPrintingValue === 'custom'){
+      display.textContent = $('#f-set-manual').value.trim() || 'Altro / inserisci manualmente…';
+    }else{
+      const p = currentPrintings[parseInt(selectedPrintingValue)];
+      display.textContent = p ? `${p.set_name} (${(p.set||'').toUpperCase()})` : '—';
+    }
+  }
+
+  function closeSetPicker(){
+    const list = $('#f-set-list');
+    if(list) list.classList.remove('show');
+  }
+
+  function selectPrintingValue(value){
+    selectedPrintingValue = value;
+    if(value === 'custom'){
+      $('#f-set-manual').style.display = 'block';
+      $('#f-set-manual').focus();
+    }else{
+      $('#f-set-manual').style.display = 'none';
+      applyPrinting(currentPrintings[parseInt(value)]);
+    }
+    renderSetPickerDisplay();
+    closeSetPicker();
+  }
+
+  /* Ogni riga della tendina mostra una miniatura e, passando il mouse sopra,
+     apre la stessa anteprima ingrandita usata nel resto del raccoglitore:
+     così puoi controllare l'illustrazione esatta prima di scegliere
+     l'edizione giusta. */
+  function renderSetPickerList(){
+    const listEl = $('#f-set-list');
+    if(!listEl) return;
+    let html;
+    if(currentPrintings.length === 0){
+      html = `<div class="autocomplete-item ac-empty">Nessuna espansione trovata</div>
+        <div class="autocomplete-item" data-value="custom">Altro / inserisci manualmente…</div>`;
+    }else{
+      const rows = currentPrintings.map((p,i)=>{
+        const m = RARITY_META[p.rarity] || RARITY_META.common;
+        const smallImg = (p.image_uris && p.image_uris.small) ||
+                    (p.card_faces && p.card_faces[0] && p.card_faces[0].image_uris && p.card_faces[0].image_uris.small) || '';
+        const bigImg = (p.image_uris && p.image_uris.normal) ||
+                    (p.card_faces && p.card_faces[0] && p.card_faces[0].image_uris && p.card_faces[0].image_uris.normal) || '';
+        const year = p.released_at ? p.released_at.slice(0,4) : '';
+        const priceTxt = p.prices && p.prices.eur ? ' · €'+parseFloat(p.prices.eur).toFixed(2) : '';
+        return `<div class="autocomplete-item hoverable" data-value="${i}" data-img="${escapeAttr(bigImg)}">
+          <div class="ac-thumb" style="${smallImg?`background-image:url('${escapeAttr(smallImg)}')`:''}"></div>
+          <div style="flex:1;">
+            <div>${escapeHtml(p.set_name)} (${(p.set||'').toUpperCase()})</div>
+            <div class="ac-meta">${m.label}${year?' · '+year:''}${priceTxt}</div>
+          </div>
+        </div>`;
+      }).join('');
+      html = rows + `<div class="autocomplete-item" data-value="custom">Altro / inserisci manualmente…</div>`;
+    }
+    listEl.innerHTML = html;
+    listEl.querySelectorAll('[data-value]').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{
+        e.preventDefault();
+        selectPrintingValue(el.dataset.value);
+      });
+      if(el.classList.contains('hoverable')){
+        el.addEventListener('mouseenter', showPreview);
+        el.addEventListener('mousemove', movePreview);
+        el.addEventListener('mouseleave', hidePreview);
+      }
+    });
+  }
+
+  $('#f-set-display').addEventListener('click', ()=>{
+    renderSetPickerList();
+    $('#f-set-list').classList.toggle('show');
+  });
+  $('#f-set-manual').addEventListener('input', renderSetPickerDisplay);
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('#set-picker-wrap')) closeSetPicker();
+  });
+
+  /* Recupera TUTTE le edizioni in cui una carta è stata stampata, dai dati
+     Scryfall (il database di riferimento anche per Moxfield/Archidekt/EDHRec),
+     e popola la tendina "Espansione". Se applyImmediately è true (nuova
+     carta/ricerca) applica subito rarità/immagine/prezzo dell'edizione
+     selezionata; se è false (modifica di una carta già salvata) evita di
+     sovrascrivere dati esistenti quando non trova una corrispondenza esatta. */
+  async function loadPrintingsForName(name, preferredSetCode, applyImmediately){
+    if(!name) return;
+    const loadingEl = $('#set-loading');
+    if(loadingEl) loadingEl.style.display = 'inline';
+    try{
+      const q = '!"' + name.replace(/"/g,'') + '"';
+      const res = await fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=prints&order=released&dir=desc');
+      if(!res.ok) throw new Error('nessuna stampa trovata');
+      const json = await res.json();
+      const printings = json.data || [];
+      currentPrintings = printings;
+      if(printings.length === 0){
+        selectedPrintingValue = 'custom';
+        $('#f-set-manual').style.display = 'block';
+        renderSetPickerDisplay();
+        return;
+      }
+      let matchIdx = printings.findIndex(p=>(p.set||'').toUpperCase() === (preferredSetCode||'').trim().toUpperCase());
+      if(matchIdx >= 0){
+        selectedPrintingValue = String(matchIdx);
+        $('#f-set-manual').style.display = 'none';
+        applyPrinting(printings[matchIdx]);
+      }else if(applyImmediately){
+        selectedPrintingValue = '0';
+        $('#f-set-manual').style.display = 'none';
+        applyPrinting(printings[0]);
+      }
+      // se non trova corrispondenza e siamo in modifica di una carta esistente,
+      // lascia la selezione così com'era e non tocca i dati già presenti
+      renderSetPickerDisplay();
+    }catch(e){
+      currentPrintings = [];
+      selectedPrintingValue = 'custom';
+      $('#f-set-manual').style.display = 'block';
+      renderSetPickerDisplay();
+    }finally{
+      if(loadingEl) loadingEl.style.display = 'none';
+    }
+  }
+
+  function selectAutocompleteItem(index){
+    const sc = acItems[index];
+    if(!sc) return;
+    $('#f-name').value = sc.name;
+    acClose();
+    loadPrintingsForName(sc.name, sc.set, true);
+    toast('Ricerca delle espansioni disponibili in corso…');
+  }
+
+  const runAutocomplete = debounceAc(async (query)=>{
+    const myToken = ++acRequestToken;
+    acRenderLoading();
+    try{
+      const [names, italianCards] = await Promise.all([
+        fetchAutocompleteNames(query),
+        fetchItalianNameMatches(query)
+      ]);
+      if(myToken !== acRequestToken) return; // superseded by a newer keystroke
+      const cardObjs = await fetchCardsByNames(names);
+      if(myToken !== acRequestToken) return;
+      // unisce i risultati inglesi e italiani, evitando doppioni sulla stessa stampa esatta
+      const seen = new Set();
+      const merged = [];
+      cardObjs.forEach(c=>{ if(c && !seen.has(c.id)){ seen.add(c.id); merged.push(c); } });
+      italianCards.forEach(c=>{ if(c && !seen.has(c.id)){ seen.add(c.id); merged.push(c); } });
+      acRenderResults(merged.length ? merged : names.map(n=>({name:n, rarity:'common'})));
+    }catch(e){
+      if(myToken === acRequestToken) acClose();
+    }
+  }, 300);
+
+  $('#f-name').addEventListener('input', (e)=>{
+    const q = e.target.value.trim();
+    if(q.length < 2){ acClose(); return; }
+    runAutocomplete(q);
+  });
+
+  $('#f-name').addEventListener('keydown', (e)=>{
+    const count = acItems.length;
+    if(!$('#ac-list').classList.contains('show') || count === 0) return;
+    if(e.key === 'ArrowDown'){
+      e.preventDefault();
+      acActiveIndex = (acActiveIndex + 1) % count;
+      acHighlight(acActiveIndex);
+    }else if(e.key === 'ArrowUp'){
+      e.preventDefault();
+      acActiveIndex = (acActiveIndex - 1 + count) % count;
+      acHighlight(acActiveIndex);
+    }else if(e.key === 'Enter'){
+      if(acActiveIndex >= 0){
+        e.preventDefault();
+        selectAutocompleteItem(acActiveIndex);
+      }
+    }else if(e.key === 'Escape'){
+      acClose();
+    }
+  });
+
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('.autocomplete-wrap')) acClose();
+  });
+
+  /* ---------------- Modal: add/edit ---------------- */
+  function openAddModal(){
+    editingId = null;
+    acClose();
+    $('#modal-title').textContent = 'Aggiungi carta';
+    $('#btn-duplicate').style.display = 'none';
+    ['f-name','f-setcode','f-image','f-price','f-notes'].forEach(id=> $('#'+id).value='');
+    $('#f-set-manual').value = '';
+    $('#f-set-manual').style.display = 'none';
+    selectedPrintingValue = 'placeholder';
+    closeSetPicker();
+    renderSetPickerDisplay();
+    $('#f-scryfallid').value = '';
+    $('#f-pricefoileur').value = '';
+    currentPrintings = [];
+    $('#f-rarity').value = 'common';
+    $('#f-type').value = 'creatura';
+    $('#f-qty').value = 1;
+    $('#f-foil').value = 'no';
+    $('#f-condition').value = '';
+    $('#f-lang').value = '';
+    $('#card-overlay').classList.add('show');
+    $('#f-name').focus();
+  }
+
+  function openEditModal(id){
+    const c = cards.find(x=>x.id===id);
+    if(!c) return;
+    editingId = id;
+    acClose();
+    $('#modal-title').textContent = 'Modifica carta';
+    $('#btn-duplicate').style.display = 'inline-block';
+    $('#f-name').value = c.name || '';
+    $('#f-setcode').value = c.setCode || '';
+    $('#f-rarity').value = c.rarity || 'common';
+    $('#f-type').value = c.type || 'altro';
+    $('#f-qty').value = c.quantity || 1;
+    $('#f-foil').value = c.foil ? 'si' : 'no';
+    $('#f-condition').value = c.condition || '';
+    $('#f-lang').value = c.language || '';
+    $('#f-image').value = c.imageUrl || '';
+    $('#f-price').value = (c.priceEur ?? '');
+    $('#f-pricefoileur').value = (c.priceFoilEur ?? '');
+    $('#f-scryfallid').value = c.scryfallId || '';
+    $('#f-notes').value = c.notes || '';
+    // mostra subito l'espansione attuale, poi prova a trovarla nella tendina
+    currentPrintings = [];
+    selectedPrintingValue = 'custom';
+    $('#f-set-manual').value = c.setName || '';
+    $('#f-set-manual').style.display = 'block';
+    closeSetPicker();
+    renderSetPickerDisplay();
+    $('#card-overlay').classList.add('show');
+    if(c.name) loadPrintingsForName(c.name, c.setCode, false);
+  }
+
+  function closeModal(){ $('#card-overlay').classList.remove('show'); editingId = null; acClose(); }
+
+  function readForm(){
+    return {
+      name: $('#f-name').value.trim(),
+      setName: getSelectedSetName(),
+      setCode: $('#f-setcode').value.trim().toUpperCase(),
+      rarity: $('#f-rarity').value,
+      type: $('#f-type').value,
+      quantity: Math.max(1, parseInt($('#f-qty').value)||1),
+      foil: $('#f-foil').value === 'si',
+      condition: $('#f-condition').value,
+      language: $('#f-lang').value,
+      imageUrl: $('#f-image').value.trim(),
+      priceEur: $('#f-price').value !== '' ? parseFloat($('#f-price').value) : null,
+      priceFoilEur: $('#f-pricefoileur').value !== '' ? parseFloat($('#f-pricefoileur').value) : null,
+      scryfallId: $('#f-scryfallid').value || null,
+      notes: $('#f-notes').value.trim()
+    };
+  }
+
+  function saveCardFromForm(){
+    const data = readForm();
+    if(!data.name){ toast('Il nome della carta è obbligatorio.'); return; }
+    if(editingId){
+      const idx = cards.findIndex(c=>c.id===editingId);
+      const freshPrice = (data.scryfallId && data.scryfallId !== cards[idx].scryfallId)
+        ? new Date().toISOString() : cards[idx].priceUpdated;
+      cards[idx] = {...cards[idx], ...data, priceUpdated: freshPrice};
+      scheduleSave(); render(); closeModal();
+      toast('Salvato nel raccoglitore.');
+      return;
+    }
+    const dupIdx = findDuplicateIndex(data.name, data.setCode, data.foil);
+    if(dupIdx >= 0){
+      mergeQuantityIntoExisting(dupIdx, data.quantity, data);
+      scheduleSave(); render(); closeModal();
+      toast('Questa carta era già presente per la stessa espansione: ho aggiornato la quantità invece di duplicarla.');
+    }else{
+      cards.push({id: uid(), priceUpdated: data.priceEur!=null ? new Date().toISOString() : null, ...data});
+      scheduleSave(); render(); closeModal();
+      toast('Salvato nel raccoglitore.');
+    }
+  }
+
+  function duplicateAsNewPrinting(){
+    const data = readForm();
+    cards.push({id: uid(), ...data, setName:'', setCode:'', scryfallId:null, priceFoilEur:null, priceUpdated:null});
+    scheduleSave(); render(); closeModal();
+    toast('Nuova copia creata: scegli l\'espansione della copia duplicata dalla tendina.');
+  }
+
+  /* ---------------- Scryfall integration ---------------- */
+  async function scryfallFuzzy(name, setCode){
+    let url = 'https://api.scryfall.com/cards/named?fuzzy=' + encodeURIComponent(name);
+    if(setCode) url += '&set=' + encodeURIComponent(setCode.toLowerCase());
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('not found');
+    return res.json();
+  }
+
+  /* Cerca prima con il nome inglese ufficiale (tollera errori di battitura),
+     e se non trova nulla riprova con il nome stampato in italiano (o in
+     qualunque altra lingua Scryfall riconosca): Scryfall indicizza anche i
+     nomi localizzati delle carte, la stessa base dati usata da Cardmarket,
+     Cardtrader, Archidekt ed EDHRec. La carta viene comunque salvata con il
+     nome ufficiale inglese, per restare coerente con il resto del raccoglitore. */
+  async function scryfallSmartFind(query, setCode){
+    try{
+      return await scryfallFuzzy(query, setCode);
+    }catch(e){ /* prova con il nome localizzato */ }
+    try{
+      let q = '"' + query.replace(/"/g,'') + '"';
+      if(setCode) q += ' e:' + setCode.toLowerCase();
+      const res = await fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=cards');
+      if(res.ok){
+        const json = await res.json();
+        if(json.data && json.data.length) return json.data[0];
+      }
+    }catch(e){ /* nessun risultato nemmeno in altre lingue */ }
+    throw new Error('Carta non trovata (né in inglese né nel nome tradotto).');
+  }
+
+  function scryfallToCardPatch(sc){
+    const img = (sc.image_uris && sc.image_uris.normal) ||
+                (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
+    let rarity = sc.rarity;
+    if(!RARITY_META[rarity]) rarity = 'common';
+    const typeLine = sc.type_line || (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].type_line) || '';
+    return {
+      name: sc.name,
+      setName: sc.set_name,
+      setCode: (sc.set||'').toUpperCase(),
+      rarity,
+      type: detectTypeFromLine(typeLine),
+      imageUrl: img,
+      scryfallId: sc.id,
+      scryfallUri: sc.scryfall_uri || '',
+      priceEur: sc.prices && sc.prices.eur ? parseFloat(sc.prices.eur) : null,
+      priceFoilEur: sc.prices && sc.prices.eur_foil ? parseFloat(sc.prices.eur_foil) : null,
+      priceUpdated: new Date().toISOString()
+    };
+  }
+
+  async function lookupIntoForm(){
+    const name = $('#f-name').value.trim();
+    if(!name){ toast('Scrivi prima il nome della carta.'); return; }
+    const setCode = $('#f-setcode').value.trim();
+    const btn = $('#btn-scryfall-lookup');
+    btn.disabled = true; btn.textContent = 'Cerco…';
+    try{
+      const sc = await scryfallSmartFind(name, setCode);
+      $('#f-name').value = sc.name;
+      await loadPrintingsForName(sc.name, sc.set, true);
+      toast('Dati recuperati da Scryfall.');
+    }catch(e){
+      toast('Carta non trovata su Scryfall. Controlla il nome o inserisci i dati a mano.');
+    }finally{
+      btn.disabled = false; btn.textContent = 'Cerca su Scryfall';
+    }
+  }
+
+  /* ---------------- URL import ---------------- */
+  function extractCardNameFromEdhrec(url){
+    const m = url.match(/edhrec\.com\/cards\/([a-z0-9-]+)/i);
+    if(!m) return null;
+    return m[1].replace(/-/g,' ');
+  }
+  function extractScryfallSlug(url){
+    const m = url.match(/scryfall\.com\/card\/([a-z0-9]+)\/(\d+[a-z]*)/i);
+    if(!m) return null;
+    return {set:m[1], number:m[2]};
+  }
+  function extractMoxfieldDeckId(url){
+    const m = url.match(/moxfield\.com\/decks\/([A-Za-z0-9_-]+)/);
+    return m ? m[1] : null;
+  }
+  function extractArchidektDeckId(url){
+    const m = url.match(/archidekt\.com\/decks\/(\d+)/);
+    return m ? m[1] : null;
+  }
+
+  async function addCardFromScryfallObj(sc, qty, foil){
+    const patch = scryfallToCardPatch(sc);
+    foil = !!foil;
+    const dupIdx = findDuplicateIndex(patch.name, patch.setCode, foil);
+    if(dupIdx >= 0){
+      mergeQuantityIntoExisting(dupIdx, qty||1, patch);
+    }else{
+      cards.push({
+        id: uid(), quantity: qty||1, foil, condition:'', language:'', notes:'',
+        ...patch
+      });
+    }
+  }
+
+  async function handleUrlImport(){
+    const raw = $('#import-url').value.trim();
+    if(!raw){ setImportStatus('Incolla prima un link.', 'error'); return; }
+    setImportStatus('Analisi del link…');
+    const btn = $('#btn-import-url'); btn.disabled = true;
+
+    try{
+      if(raw.includes('scryfall.com')){
+        const slug = extractScryfallSlug(raw);
+        if(!slug){ setImportStatus('Link Scryfall non riconosciuto: usa un link diretto a una carta.', 'error'); return; }
+        setImportStatus('Recupero dati da Scryfall…');
+        const res = await fetch(`https://api.scryfall.com/cards/${slug.set}/${slug.number}`);
+        if(!res.ok) throw new Error('not found');
+        const sc = await res.json();
+        await addCardFromScryfallObj(sc, 1);
+        scheduleSave(); render();
+        setImportStatus(`Aggiunta: ${sc.name}.`, 'ok');
+
+      }else if(raw.includes('edhrec.com')){
+        const name = extractCardNameFromEdhrec(raw);
+        if(!name){ setImportStatus('Non riesco a leggere il nome carta da questo link EDHREC.', 'error'); return; }
+        setImportStatus('Cerco "'+name+'" su Scryfall…');
+        const sc = await scryfallFuzzy(name);
+        await addCardFromScryfallObj(sc, 1);
+        scheduleSave(); render();
+        setImportStatus(`Aggiunta: ${sc.name}.`, 'ok');
+
+      }else if(raw.includes('moxfield.com')){
+        const id = extractMoxfieldDeckId(raw);
+        if(!id){ setImportStatus('Link Moxfield non riconosciuto.', 'error'); return; }
+        setImportStatus('Tento il recupero del mazzo da Moxfield…');
+        let data;
+        try{
+          const res = await fetch(`https://api2.moxfield.com/v3/decks/all/${id}`);
+          if(!res.ok) throw new Error('http '+res.status);
+          data = await res.json();
+        }catch(err){
+          setImportStatus('Moxfield blocca le richieste dirette dal browser (CORS). Esporta il mazzo come lista di testo e usa "Importa lista/CSV".', 'error');
+          return;
+        }
+        const board = (data.mainboard) || {};
+        const entries = Object.values(board);
+        setImportStatus(`Trovate ${entries.length} carte, arricchimento in corso…`);
+        let added = 0;
+        for(const entry of entries){
+          const cardInfo = entry.card || {};
+          try{
+            const sc = cardInfo.scryfall_id
+              ? await (await fetch(`https://api.scryfall.com/cards/${cardInfo.scryfall_id}`)).json()
+              : await scryfallFuzzy(cardInfo.name || entry.name);
+            await addCardFromScryfallObj(sc, entry.quantity || 1, !!entry.isFoil);
+            added++;
+          }catch(e){ /* skip card that fails lookup */ }
+          await sleep(90);
+        }
+        scheduleSave(); render();
+        setImportStatus(`Importazione completata: ${added} carte aggiunte da Moxfield.`, 'ok');
+
+      }else if(raw.includes('archidekt.com')){
+        const id = extractArchidektDeckId(raw);
+        if(!id){ setImportStatus('Link Archidekt non riconosciuto.', 'error'); return; }
+        setImportStatus('Tento il recupero del mazzo da Archidekt…');
+        let data;
+        try{
+          const res = await fetch(`https://archidekt.com/api/decks/${id}/`);
+          if(!res.ok) throw new Error('http '+res.status);
+          data = await res.json();
+        }catch(err){
+          setImportStatus('Archidekt blocca le richieste dirette dal browser (CORS). Esporta il mazzo come lista di testo e usa "Importa lista/CSV".', 'error');
+          return;
+        }
+        const entries = data.cards || [];
+        setImportStatus(`Trovate ${entries.length} carte, arricchimento in corso…`);
+        let added = 0;
+        for(const entry of entries){
+          const name = entry.card && entry.card.oracleCard ? entry.card.oracleCard.name : (entry.card && entry.card.name);
+          if(!name) continue;
+          try{
+            const sc = await scryfallFuzzy(name);
+            await addCardFromScryfallObj(sc, entry.quantity || 1, !!entry.modifier && /foil/i.test(entry.modifier));
+            added++;
+          }catch(e){}
+          await sleep(90);
+        }
+        scheduleSave(); render();
+        setImportStatus(`Importazione completata: ${added} carte aggiunte da Archidekt.`, 'ok');
+
+      }else{
+        setImportStatus('Formato di link non riconosciuto. Supportati: Scryfall, EDHREC, Moxfield, Archidekt.', 'error');
+      }
+    }catch(e){
+      setImportStatus('Importazione non riuscita: ' + e.message, 'error');
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
+  function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  /* ---------------- Scansione carta con fotocamera ----------------
+     Non esiste un'API pubblica di Google Lens richiamabile da una pagina web:
+     Lens è un'app chiusa che non restituisce risultati a siti di terze parti.
+     La soluzione realmente funzionante è: scattare la foto con la fotocamera
+     del telefono, leggere il testo del titolo della carta direttamente nel
+     browser con un motore OCR (Tesseract.js, gratuito e senza account), e
+     usare quel testo per cercare la carta su Scryfall — esattamente come fa
+     già il pulsante "Cerca su Scryfall". Se il testo non viene riconosciuto
+     bene, viene comunque offerto un link di riserva a Google Lens per
+     un'identificazione manuale. */
+  let tesseractLoadPromise = null;
+  function loadTesseractScript(){
+    if(window.Tesseract) return Promise.resolve();
+    if(tesseractLoadPromise) return tesseractLoadPromise;
+    tesseractLoadPromise = new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+      s.onload = ()=> resolve();
+      s.onerror = ()=> reject(new Error('Impossibile caricare il motore di riconoscimento testo (verifica la connessione).'));
+      document.head.appendChild(s);
+    });
+    return tesseractLoadPromise;
+  }
+
+  function fileToDataUrl(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=> resolve(reader.result);
+      reader.onerror = ()=> reject(new Error('Lettura della foto non riuscita.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function setScanStatus(text, isError){
+    const el = $('#scan-status');
+    if(el) el.textContent = text;
+    $('#scan-fallback').style.display = isError ? 'block' : 'none';
+    $('#btn-scan-retry').style.display = isError ? 'inline-block' : 'none';
+    $('#btn-scan-manual').style.display = isError ? 'inline-block' : 'none';
+  }
+
+  function openScanOverlay(dataUrl){
+    $('#scan-preview-img').src = dataUrl;
+    setScanStatus('Preparazione del riconoscimento testo…', false);
+    $('#scan-overlay').classList.add('show');
+  }
+  function closeScanOverlay(){ $('#scan-overlay').classList.remove('show'); }
+
+  /* Migliora la leggibilità della foto per l'OCR: scala di grigi + aumento
+     del contrasto, un accorgimento standard che alza sensibilmente la
+     precisione del riconoscimento testo, specie con luce non ottimale. */
+  function preprocessImageForOcr(dataUrl){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const maxW = 1400; // sufficiente per l'OCR, evita di elaborare foto enormi inutilmente
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        try{
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const d = imageData.data;
+          for(let i=0; i<d.length; i+=4){
+            const gray = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+            const contrasted = Math.min(255, Math.max(0, (gray - 128) * 1.35 + 128));
+            d[i] = d[i+1] = d[i+2] = contrasted;
+          }
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        }catch(e){ resolve(dataUrl); } // canvas "tainted" o altro errore: usa la foto originale
+      };
+      img.onerror = ()=> resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  /* Ritaglia solo la fascia superiore della foto, dove si trova sempre il
+     titolo della carta: utile come secondo tentativo quando la lettura
+     sull'immagine intera viene confusa dall'illustrazione. */
+  function cropTopBand(dataUrl, fraction){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = Math.max(1, Math.round(img.height * fraction));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, img.width, canvas.height, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.92));
+      };
+      img.onerror = ()=> resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
+  /* Legge il testo con Tesseract (inglese + italiano insieme, per riconoscere
+     bene anche accenti e tipografia delle carte in italiano) e prova, in
+     ordine, le righe più probabili contro Scryfall — usando la ricerca
+     intelligente che capisce anche i nomi tradotti. */
+  async function tryOcrAndMatch(imgSrc, label){
+    const { data } = await Tesseract.recognize(imgSrc, 'eng+ita', {
+      logger: (m)=>{
+        if(m.status === 'recognizing text'){
+          setScanStatus(`Lettura ${label}… ${Math.round((m.progress||0)*100)}%`, false);
+        }else if(m.status){
+          setScanStatus('Preparazione del motore di riconoscimento…', false);
+        }
+      }
+    });
+    const lines = (data.text || '')
+      .split('\n')
+      .map(l => l.replace(/[^A-Za-zÀ-ÿ0-9,'’\- ]/g,'').trim())
+      .filter(l => l.length >= 3);
+    const candidates = lines.slice(0, 6);
+    for(const candidate of candidates){
+      try{
+        return await scryfallSmartFind(candidate);
+      }catch(e){ /* prova la riga di testo successiva */ }
+    }
+    return null;
+  }
+
+  /* Due passate: prima sull'intera foto (preelaborata), e se non trova nulla
+     una seconda mirata solo sul titolo in alto, spesso più precisa quando
+     l'illustrazione confonde la lettura generale. */
+  async function recognizeCardFromImage(dataUrl){
+    const processed = await preprocessImageForOcr(dataUrl);
+
+    let sc = await tryOcrAndMatch(processed, 'della foto');
+    if(sc) return sc;
+
+    setScanStatus('Non trovata al primo tentativo, isolo il titolo in alto…', false);
+    const topBand = await cropTopBand(processed, 0.22);
+    if(topBand){
+      sc = await tryOcrAndMatch(topBand, 'del titolo');
+      if(sc) return sc;
+    }
+
+    throw new Error('Nessun nome di carta riconosciuto nella foto.');
+  }
+
+  async function handleScanFile(e){
+    const file = e.target.files[0];
+    e.target.value = ''; // permette di riselezionare la stessa foto in seguito
+    if(!file) return;
+    let dataUrl;
+    try{
+      dataUrl = await fileToDataUrl(file);
+    }catch(err){
+      toast('Non sono riuscito a leggere la foto scattata.');
+      return;
+    }
+    openScanOverlay(dataUrl);
+    try{
+      await loadTesseractScript();
+      setScanStatus('Lettura del testo dalla foto…', false);
+      const sc = await recognizeCardFromImage(dataUrl);
+      closeScanOverlay();
+      openAddModal();
+      $('#f-name').value = sc.name;
+      await loadPrintingsForName(sc.name, sc.set, true);
+      toast(`Carta riconosciuta: ${sc.name}. Controlla i dati e salva.`);
+    }catch(err){
+      setScanStatus('Non sono riuscito a riconoscere il nome della carta. Riprova con più luce, inquadrando bene il titolo in alto, oppure inseriscila a mano.', true);
+    }
+  }
+
+  /* ---------------- Bulk text import ---------------- */
+  /* Riconosce righe come:
+       "4 Lightning Bolt (LEA)"
+       "1 Eye of Ugin (MM2) 242 *F*"      -> espansione MM2, numero 242, foil
+       "2x Brainstorm (MMA) 45"
+       "Sol Ring"
+     Il numero di collezione + codice set permettono di recuperare da Scryfall
+     la stampa ESATTA (non solo il nome), evitando qualunque aggiustamento
+     manuale successivo. */
+  function parseBulkLine(line){
+    line = line.trim();
+    if(!line) return null;
+
+    // 1) marcatore foil in una qualunque delle forme comuni: *F*, *Foil*, (F), (Foil), o la parola "foil" isolata
+    let foil = false;
+    const foilRe = /\*\s*f(?:oil)?\s*\*|\(\s*f(?:oil)?\s*\)|\bfoil\b/i;
+    const foilMatch = line.match(foilRe);
+    if(foilMatch){
+      foil = true;
+      line = (line.slice(0, foilMatch.index) + line.slice(foilMatch.index + foilMatch[0].length)).trim();
+    }
+
+    // 2) quantità iniziale opzionale: "4 ", "4x ", "1x "
+    let qty = 1;
+    const qtyMatch = line.match(/^(\d+)\s*x?\s+/i);
+    if(qtyMatch){
+      qty = parseInt(qtyMatch[1]) || 1;
+      line = line.slice(qtyMatch[0].length).trim();
+    }
+
+    // 3) codice set tra parentesi: "(MM2)"
+    let setCode = null;
+    const setMatch = line.match(/\(([A-Za-z0-9]{2,6})\)/);
+    if(setMatch){
+      setCode = setMatch[1].toUpperCase();
+      line = (line.slice(0, setMatch.index) + line.slice(setMatch.index + setMatch[0].length)).trim();
+    }
+
+    // 4) numero di collezione finale, es. "242", "242a", "★242"
+    let collectorNumber = null;
+    const numMatch = line.match(/(?:^|\s)★?(\d+[a-z]?)★?\s*$/i);
+    if(numMatch){
+      collectorNumber = numMatch[1];
+      line = line.slice(0, numMatch.index).trim();
+    }
+
+    const name = line.replace(/\s{2,}/g,' ').trim();
+    return { qty, name, setCode, collectorNumber, foil };
+  }
+
+  /* Recupera la stampa esatta tramite set+numero di collezione (il modo più
+     preciso su Scryfall); se mancano questi dati, o la ricerca esatta fallisce,
+     ripiega sulla ricerca per nome (eventualmente filtrata per set). */
+  async function fetchExactPrinting(setCode, collectorNumber, name){
+    if(setCode && collectorNumber){
+      try{
+        const res = await fetch(`https://api.scryfall.com/cards/${encodeURIComponent(setCode.toLowerCase())}/${encodeURIComponent(collectorNumber.toLowerCase())}`);
+        if(res.ok) return await res.json();
+      }catch(e){ /* ripiega sulla ricerca per nome qui sotto */ }
+    }
+    return await scryfallSmartFind(name, setCode);
+  }
+
+  async function runBulkImport(){
+    const text = $('#bulk-text').value;
+    const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length === 0){ toast('Incolla almeno una riga.'); return; }
+    const progress = $('#bulk-progress');
+    const btn = $('#btn-run-bulk'); btn.disabled = true;
+    let ok=0, fail=0, merged=0;
+    for(let i=0;i<lines.length;i++){
+      const parsed = parseBulkLine(lines[i]);
+      progress.textContent = `Elaborazione ${i+1}/${lines.length}: ${parsed.name}${parsed.setCode?' ('+parsed.setCode+')':''}${parsed.foil?' [foil]':''}…`;
+      const before = cards.length;
+      try{
+        const sc = await fetchExactPrinting(parsed.setCode, parsed.collectorNumber, parsed.name);
+        await addCardFromScryfallObj(sc, parsed.qty, parsed.foil);
+        ok++;
+      }catch(e){
+        fail++;
+        const dupIdx = findDuplicateIndex(parsed.name, parsed.setCode, parsed.foil);
+        if(dupIdx >= 0){
+          mergeQuantityIntoExisting(dupIdx, parsed.qty, {});
+        }else{
+          cards.push({
+            id: uid(), name: parsed.name, setName:'', setCode: parsed.setCode||'', rarity:'common', type:'altro',
+            quantity: parsed.qty, foil: parsed.foil, condition:'', language:'', imageUrl:'',
+            notes: parsed.collectorNumber ? `Aggiunta senza dati Scryfall (numero ${parsed.collectorNumber} non trovato).` : 'Aggiunta senza dati Scryfall (non trovata).',
+            priceEur:null, priceFoilEur:null, priceUpdated:null, scryfallId:null
+          });
+        }
+      }
+      if(cards.length === before) merged++;
+      await sleep(90);
+    }
+    scheduleSave(); render();
+    progress.textContent = `Fatto: ${ok} arricchite automaticamente, ${fail} aggiunte solo col nome, ${merged} già presenti (stessa espansione e foil) — quantità aggiornata invece di duplicarle.`;
+    $('#bulk-text').value = ''; // svuota la casella così puoi incollare subito una nuova lista
+    btn.disabled = false;
+    toast('Importazione in blocco completata.');
+  }
+
+  /* ---------------- Price refresh ---------------- */
+  /* Applica i dati aggiornati di Scryfall a una carta, calcolando prima la
+     tendenza di prezzo (▲/▼) rispetto al valore precedentemente salvato —
+     considerando sempre il prezzo giusto (foil o normale) in base a come è
+     catalogata quella specifica copia. Usata sia dall'aggiornamento singolo
+     che da quello globale/automatico, per restare coerenti. */
+  function applyScryfallRefresh(c, sc){
+    const newEur = sc.prices && sc.prices.eur ? parseFloat(sc.prices.eur) : null;
+    const newFoilEur = sc.prices && sc.prices.eur_foil ? parseFloat(sc.prices.eur_foil) : null;
+
+    const oldRelevant = c.foil ? c.priceFoilEur : c.priceEur;
+    const newRelevant = c.foil ? (newFoilEur ?? c.priceFoilEur) : (newEur ?? c.priceEur);
+    if(typeof oldRelevant === 'number' && typeof newRelevant === 'number' && oldRelevant > 0){
+      const pct = ((newRelevant - oldRelevant) / oldRelevant) * 100;
+      c.priceTrend = Math.abs(pct) >= 0.5 ? pct : 0; // ignora variazioni minime/arrotondamenti
+    }else{
+      c.priceTrend = null;
+    }
+
+    if(newEur != null) c.priceEur = newEur;
+    if(newFoilEur != null) c.priceFoilEur = newFoilEur;
+    c.priceUpdated = new Date().toISOString();
+    if(!c.scryfallUri && sc.scryfall_uri) c.scryfallUri = sc.scryfall_uri;
+    if(!c.scryfallId) c.scryfallId = sc.id;
+    if(!c.imageUrl){
+      const img = (sc.image_uris && sc.image_uris.normal) ||
+                  (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
+      if(img) c.imageUrl = img;
+    }
+    if(!c.setName && sc.set_name) c.setName = sc.set_name;
+    if(!c.setCode && sc.set) c.setCode = sc.set.toUpperCase();
+    if(RARITY_META[sc.rarity] && c.rarity === 'common' && sc.rarity !== 'common') c.rarity = sc.rarity;
+    let typeFixed = false;
+    if(!c.type || c.type === 'altro'){
+      const typeLine = sc.type_line || (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].type_line) || '';
+      const detected = detectTypeFromLine(typeLine);
+      if(detected !== 'altro' && detected !== c.type){ c.type = detected; typeFixed = true; }
+    }
+    return { typeFixed };
+  }
+
+  async function refreshAllPrices(silent){
+    if(cards.length === 0){ if(!silent) toast('Il raccoglitore è vuoto.'); return; }
+    const btn = $('#btn-refresh-prices');
+    if(!silent){ btn.disabled = true; btn.textContent = '⟳ Aggiornamento…'; }
+    let updated = 0, typeFixed = 0;
+    for(let i=0;i<cards.length;i++){
+      const c = cards[i];
+      try{
+        const sc = c.scryfallId
+          ? await (await fetch(`https://api.scryfall.com/cards/${c.scryfallId}`)).json()
+          : await scryfallFuzzy(c.name, c.setCode);
+        const res = applyScryfallRefresh(c, sc);
+        if(res.typeFixed) typeFixed++;
+        updated++;
+      }catch(e){ /* keep old price, skip */ }
+      await sleep(90);
+      if(!silent) btn.textContent = `⟳ ${i+1}/${cards.length}`;
+    }
+    scheduleSave(); render();
+    if(!silent){
+      btn.disabled = false; btn.textContent = '⟳ Aggiorna tutto';
+      toast(`Aggiornate ${updated} carte su ${cards.length}${typeFixed?` (${typeFixed} tipi corretti, non più "Altro")`:''}.`);
+    }else if(updated > 0){
+      toast(`Prezzi aggiornati automaticamente (controllo giornaliero).`);
+    }
+  }
+
+  /* Aggiornamento immediato di UNA sola carta: utile quando l'immagine, il
+     prezzo o il tipo ("Altro") non sono stati riconosciuti al momento
+     dell'inserimento. Ripete la ricerca su Scryfall subito, senza dover
+     lanciare l'aggiornamento globale. */
+  async function refreshSingleCard(id){
+    const c = cards.find(x=>x.id===id);
+    if(!c) return;
+    const btns = $$(`.list-row[data-id="${id}"] [data-action="refresh"], .card-tile[data-id="${id}"] [data-action="refresh"]`);
+    btns.forEach(b=>{ b.disabled = true; b.textContent = '…'; });
+    try{
+      const sc = c.scryfallId
+        ? await (await fetch(`https://api.scryfall.com/cards/${c.scryfallId}`)).json()
+        : await scryfallFuzzy(c.name, c.setCode);
+      applyScryfallRefresh(c, sc);
+      scheduleSave(); render();
+      toast(`Dati aggiornati per ${c.name}.`);
+    }catch(e){
+      toast(`Non ho trovato "${c.name}" su Scryfall: verifica nome ed espansione, oppure completa i dati a mano.`);
+      btns.forEach(b=>{ b.disabled = false; b.textContent = '⟳'; });
+    }
+  }
+
+  /* Controllo automatico giornaliero: se almeno una carta non ha mai
+     ricevuto un prezzo o non viene aggiornata da più di 24 ore, riallinea
+     tutto in sottofondo appena il raccoglitore viene aperto, senza bisogno
+     di premere "Aggiorna tutto" a mano ogni giorno. */
+  function maybeAutoRefreshPrices(){
+    if(cards.length === 0) return;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const needsRefresh = cards.some(c => !c.priceUpdated || (now - new Date(c.priceUpdated).getTime()) > DAY_MS);
+    if(needsRefresh) refreshAllPrices(true);
+  }
+
+  /* ---------------- Export ---------------- */
+  function exportJson(){
+    const blob = new Blob([JSON.stringify(cards, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'raccoglitore-mtg.json';
+    a.click();
+  }
+
+  function resetAllQuantitiesTo1(){
+    if(cards.length === 0){ toast('Il raccoglitore è vuoto.'); return; }
+    if(!confirm(`Riportare la quantità di tutte le ${cards.length} voci a 1x? Utile per ricontrollare quante copie diverse possiedi di ogni carta.`)) return;
+    cards.forEach(c => { c.quantity = 1; });
+    scheduleSave(); render();
+    toast('Quantità di tutte le carte riportata a 1x.');
+  }
+
+  /* ---------------- Wire up events ---------------- */
+  $('#btn-add-card').addEventListener('click', openAddModal);
+
+  $('#btn-open-decks').addEventListener('click', openDecksSection);
+  $('#btn-back-to-collection').addEventListener('click', closeDecksSection);
+
+  function openGameSection(){
+    $('#toolbar').style.display = 'none';
+    $('#main').style.display = 'none';
+    $('#decks-section').style.display = 'none';
+    $('#game-section').style.display = 'block';
+    populateGameDeckSelects();
+    renderDeckPicks('player');
+    renderDeckPicks('claude');
+  }
+  function closeGameSection(){
+    $('#game-section').style.display = 'none';
+    $('#toolbar').style.display = '';
+    $('#main').style.display = '';
+  }
+  $('#btn-open-game').addEventListener('click', openGameSection);
+  $('#btn-back-from-game').addEventListener('click', closeGameSection);
+  $('#btn-start-game').addEventListener('click', startGame);
+  $('#toggle-player-paste').addEventListener('click', ()=>{
+    const block = $('#player-paste-block');
+    block.style.display = block.style.display === 'none' ? 'block' : 'none';
+  });
+  $('#toggle-claude-paste').addEventListener('click', ()=>{
+    const block = $('#claude-paste-block');
+    block.style.display = block.style.display === 'none' ? 'block' : 'none';
+  });
+  $('#toggle-player-collection').addEventListener('click', ()=>{
+    const block = $('#player-collection-block');
+    const opening = block.style.display === 'none';
+    block.style.display = opening ? 'block' : 'none';
+    if(opening) renderCollectionSuggestions('player', $('#player-collection-search').value);
+  });
+  $('#toggle-claude-collection').addEventListener('click', ()=>{
+    const block = $('#claude-collection-block');
+    const opening = block.style.display === 'none';
+    block.style.display = opening ? 'block' : 'none';
+    if(opening) renderCollectionSuggestions('claude', $('#claude-collection-search').value);
+  });
+  $('#player-collection-search').addEventListener('input', (e)=> renderCollectionSuggestions('player', e.target.value));
+  $('#claude-collection-search').addEventListener('input', (e)=> renderCollectionSuggestions('claude', e.target.value));
+  $('#player-collection-addselected').addEventListener('click', ()=> addSelectedToDeck('player'));
+  $('#claude-collection-addselected').addEventListener('click', ()=> addSelectedToDeck('claude'));
+
+  $('#btn-save-moxfield-username').addEventListener('click', ()=>{
+    const v = $('#moxfield-username').value.trim().replace(/^@/, '');
+    moxfieldUsername = v;
+    scheduleSave(); renderDecksSection();
+    toast(v ? 'Username Moxfield salvato.' : 'Username Moxfield rimosso.');
+  });
+
+  $('#btn-add-deck-link').addEventListener('click', ()=>{
+    const name = $('#new-deck-name').value.trim();
+    const url = $('#new-deck-url').value.trim();
+    if(!name || !url){ toast('Inserisci nome e link del mazzo.'); return; }
+    if(!/^https?:\/\//i.test(url)){ toast('Il link deve iniziare con https://'); return; }
+    deckLinks.push({ id: uid(), name, url });
+    $('#new-deck-name').value = '';
+    $('#new-deck-url').value = '';
+    scheduleSave(); renderDecksSection();
+    toast('Mazzo aggiunto.');
+  });
+  /* I due pulsanti (quello in fondo e quello subito sotto "Aggiorna tutto")
+     comandano lo stesso stato e restano sempre sincronizzati tra loro. */
+  function setToolbarCollapsed(collapsed){
+    $('#toolbar').classList.toggle('collapsed', collapsed);
+    const bottomLabel = collapsed ? '▼ Mostra filtri e ricerca' : '▲ Comprimi filtri e ricerca';
+    const midLabel = collapsed ? '▼ Mostra filtri' : '▲ Comprimi e scorri le carte';
+    $('#toolbar-toggle').textContent = bottomLabel;
+    if($('#toolbar-toggle-mid')) $('#toolbar-toggle-mid').textContent = midLabel;
+  }
+  $('#toolbar-toggle').addEventListener('click', ()=>{
+    setToolbarCollapsed(!$('#toolbar').classList.contains('collapsed'));
+  });
+  $('#toolbar-toggle-mid').addEventListener('click', ()=>{
+    setToolbarCollapsed(!$('#toolbar').classList.contains('collapsed'));
+  });
+  // Su schermi piccoli (telefoni/tablet) la toolbar parte già chiusa, per
+  // lasciare subito visibile l'elenco delle carte senza dover scorrere oltre
+  // tutti i filtri; su desktop resta aperta come prima.
+  if(window.innerWidth <= 760){
+    setToolbarCollapsed(true);
+  }
+  $('#btn-scan-card').addEventListener('click', ()=> $('#scan-input').click());
+  $('#scan-input').addEventListener('change', handleScanFile);
+  $('#btn-scan-cancel').addEventListener('click', closeScanOverlay);
+  $('#btn-scan-retry').addEventListener('click', ()=>{ closeScanOverlay(); $('#scan-input').click(); });
+  $('#btn-scan-manual').addEventListener('click', ()=>{ closeScanOverlay(); openAddModal(); });
+  $('#scan-overlay').addEventListener('click', (e)=>{ if(e.target.id==='scan-overlay') closeScanOverlay(); });
+  $('#btn-cancel-modal').addEventListener('click', closeModal);
+  $('#btn-save-card').addEventListener('click', saveCardFromForm);
+  $('#btn-duplicate').addEventListener('click', duplicateAsNewPrinting);
+  $('#btn-scryfall-lookup').addEventListener('click', lookupIntoForm);
+  $('#card-overlay').addEventListener('click', (e)=>{ if(e.target.id==='card-overlay') closeModal(); });
+
+  $('#btn-import-url').addEventListener('click', handleUrlImport);
+  $('#import-url').addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleUrlImport(); });
+
+  $('#btn-bulk-import').addEventListener('click', ()=>{ $('#bulk-overlay').classList.add('show'); $('#bulk-progress').textContent=''; });
+  $('#btn-cancel-bulk').addEventListener('click', ()=> $('#bulk-overlay').classList.remove('show'));
+  $('#btn-run-bulk').addEventListener('click', runBulkImport);
+  $('#bulk-overlay').addEventListener('click', (e)=>{ if(e.target.id==='bulk-overlay') $('#bulk-overlay').classList.remove('show'); });
+
+  $$('#display-toggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{
+    $$('#display-toggle .view-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    displayMode = b.dataset.display;
+    render();
+  }));
+
+  $$('#group-toggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{
+    $$('#group-toggle .view-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    groupMode = b.dataset.group;
+    render();
+  }));
+
+  $('#search-input').addEventListener('input', (e)=>{ searchTerm = e.target.value; render(); });
+  $('#set-filter').addEventListener('change', (e)=>{ setFilter = e.target.value; render(); });
+  $('#sort-mode').addEventListener('change', (e)=>{ sortMode = e.target.value; render(); });
+  $('#btn-refresh-prices').addEventListener('click', ()=>{
+    refreshAllPrices(false);
+    // Se il browser lo supporta (Chrome/Android, app installata), registra
+    // anche un aggiornamento "di riserva" in background: se chiudi l'app
+    // prima che finisca, il sistema può completarlo da solo non appena lo
+    // ritiene opportuno. Non è un tempo garantito/istantaneo — è il sistema
+    // operativo a decidere quando eseguirlo — ma permette all'aggiornamento
+    // di arrivare comunque a termine anche ad app chiusa.
+    if('serviceWorker' in navigator && 'SyncManager' in window && useFirebase){
+      navigator.serviceWorker.ready.then(reg=>{
+        reg.sync.register('sync-refresh-prices').catch(()=>{});
+      }).catch(()=>{});
+    }
+  });
+  $('#btn-export').addEventListener('click', exportJson);
+  $('#btn-reset-quantities').addEventListener('click', resetAllQuantitiesTo1);
+
+  const backendNote = $('#backend-note');
+  if(backendNote){
+    backendNote.textContent = useFirebase
+      ? 'Backend attivo: il tuo cloud Firebase personale — funziona da qualunque dispositivo o browser.'
+      : 'Backend attivo: salvataggio integrato di Claude — funziona solo aprendo questo file dentro Claude.ai.';
+  }
+
+  loadCards();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('./service-worker.js').then((reg)=>{
+        document.addEventListener('visibilitychange', ()=>{
+          if(document.visibilityState === 'visible') reg.update();
+        });
+      }).catch(()=>{});
+    });
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      if(swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
+  }
+})();
+</script>
+</body>
+</html>
