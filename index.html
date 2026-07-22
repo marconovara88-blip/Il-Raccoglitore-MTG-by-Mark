@@ -204,6 +204,14 @@
   }
   button.primary:hover{background:#dbb43a; color:#1c1712;}
   button.ghost{background:transparent;}
+  a.ghost{
+    font-family:var(--font-body); font-weight:600; font-size:12.5px;
+    border-radius:4px; border:1px solid var(--border); background:transparent;
+    color:var(--text); padding:8px 14px; cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;
+    white-space:nowrap;
+  }
+  a.ghost:hover{border-color:var(--accent); color:var(--accent);}
   button.danger:hover{border-color:var(--danger); color:var(--danger);}
   button.active{border-color:var(--accent); color:var(--accent); background:#2f2717;}
   button:disabled{opacity:0.45; cursor:default;}
@@ -582,10 +590,12 @@
   .zone-cards.empty-zone::after{
     content:'vuoto'; color:var(--text-faint); font-size:11px; font-style:italic; padding:16px 0;
   }
-  .zone-cards.drop-target-hover, .library-stack.drop-target-hover, .graveyard-list.drop-target-hover{
+  .zone-cards.drop-target-hover, .library-stack.drop-target-hover{
     background:rgba(201,162,39,0.12); box-shadow:0 0 0 1.5px var(--accent) inset;
   }
-  .battlefield-zone{min-height:88px; background:rgba(0,0,0,0.15); border:1px dashed #33472e;}
+  .play-area{min-height:150px; background:rgba(0,0,0,0.15); border:1px dashed #33472e; align-content:flex-start;}
+  .battlefield-zone{min-height:190px;}
+  .lands-zone{min-height:150px;}
   .game-card{
     position:relative; width:80px; height:112px; border-radius:6px; flex-shrink:0;
     background:var(--bg-elevated) center/cover no-repeat; border:1px solid var(--border);
@@ -649,8 +659,7 @@
   .library-stack .num{font-family:var(--font-mono); font-weight:700; font-size:16px; color:var(--accent);}
   .library-stack .lbl{font-size:9px; color:var(--text-faint);}
   .library-stack.pulse-once{animation:drawPulse .28s ease;}
-  .graveyard-list{display:none; flex-wrap:wrap; gap:6px; margin-top:8px; padding:6px; border-radius:8px;}
-  .graveyard-list.show{display:flex;}
+  .graveyard-zone, .exile-zone{min-height:150px;}
 
   .game-log-panel{
     background:rgba(0,0,0,0.25); border:1px solid var(--border-soft); border-radius:10px;
@@ -846,6 +855,7 @@
       <input type="file" accept="image/*" capture="environment" id="scan-input" style="display:none;">
       <button class="primary" id="btn-add-card">＋ Aggiungi carta</button>
       <button class="ghost" id="btn-open-game">🎮 Gioca contro di me</button>
+      <a href="https://moxfield.com/decks/personal" target="_blank" rel="noopener" class="ghost" style="text-decoration:none; display:inline-flex; align-items:center;">🔗 I miei mazzi Moxfield</a>
     </div>
     <div class="row">
       <span id="import-status"></span>
@@ -1130,6 +1140,23 @@
       <div class="left">
         <button id="btn-cancel-bulk" class="ghost">Annulla</button>
         <button id="btn-run-bulk" class="primary">Importa</button>
+      </div>
+    </div>
+
+    <button type="button" class="ghost" id="toggle-scanapp-csv" style="margin-top:18px; font-size:11.5px;">📷 Ho un CSV esportato da Delver Lens o Dragon Shield</button>
+    <div id="scanapp-csv-block" style="display:none; margin-top:10px; border-top:1px solid var(--border-soft); padding-top:14px;">
+      <p class="bulk-help">
+        Incolla qui il contenuto del file CSV esportato dall'app di scansione (Delver Lens o Dragon Shield MTG Card Manager). Se il file include l'ID Scryfall di ogni carta (opzione consigliata in Delver Lens), la carta viene recuperata in modo <strong>esatto al 100%</strong>, senza nessuna ambiguità; altrimenti provo comunque a riconoscerla da nome ed espansione, come per la lista normale qui sopra.
+      </p>
+      <div class="field">
+        <textarea id="scanapp-csv-text" style="min-height:140px;" placeholder="quantity,scryfall_id&#10;2,99a3376b-80be-4a53-9030-21d6256dc996&#10;1,f6833e5e-8a3f-4de1-9f5a-9084b7c5ce5a"></textarea>
+      </div>
+      <div id="scanapp-csv-progress" style="font-size:12px; color:var(--text-dim);"></div>
+      <div class="modal-actions">
+        <div></div>
+        <div class="left">
+          <button id="btn-run-scanapp-csv" class="primary">Importa CSV</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1690,9 +1717,8 @@
     const hand = library.splice(0, Math.min(7, library.length));
     return {
       name, life, library, hand,
-      battlefield: [], graveyard: [], exile: [],
+      lands: [], battlefield: [], graveyard: [], exile: [],
       command: deckData.command,
-      graveyardOpen: false, exileOpen: false,
       poison: 0, energy: 0, experience: 0,
       attacking: []
     };
@@ -1790,7 +1816,7 @@
     $('#btn-timer-pass').addEventListener('click', passTurnTimer);
   }
 
-  const ZONE_LABELS = { hand:'Mano', battlefield:'Campo', graveyard:'Cimitero', exile:'Esilio', library:'Grimorio', command:'Comando' };
+  const ZONE_LABELS = { hand:'Mano', lands:'Terreni', battlefield:'Campo', graveyard:'Cimitero', exile:'Esilio', library:'Grimorio', command:'Comando' };
 
   function logEvent(text){
     if(!gameState) return;
@@ -1807,7 +1833,8 @@
 
   function gameCardHtml(side, zone, c){
     const bg = c.imageUrl ? `style="background-image:url('${escapeAttr(c.imageUrl)}')"` : '';
-    const tappedClass = (zone === 'battlefield' && c.tapped) ? 'tapped' : '';
+    const tappable = (zone === 'battlefield' || zone === 'lands');
+    const tappedClass = (tappable && c.tapped) ? 'tapped' : '';
     const cmdClass = c.isCommander ? 'is-commander' : '';
     const tokenClass = c.isToken ? 'is-token' : '';
     const attackingClass = (zone === 'battlefield' && gameState[side].attacking.includes(c.uid)) ? 'attacking' : '';
@@ -1817,11 +1844,19 @@
       ? `<button data-act="toCommand" title="Torna al comando">👑</button>` : '';
     if(zone === 'hand'){
       actions = `<div class="card-mini-actions">
+        <button data-act="toLands" title="Gioca come terreno">🏞</button>
         <button data-act="toBattlefield" title="Gioca in campo">▶</button>
         <button data-act="toGraveyard" title="Cimitero">🪦</button>
         <button data-act="toExile" title="Esilio">🌀</button>
         <button data-act="toLibrary" title="Rimescola nel mazzo">🔄</button>
         ${toCommand}
+      </div>`;
+    }else if(zone === 'lands'){
+      actions = `<div class="card-mini-actions">
+        <button data-act="tap" title="Tappa/sblocca">⟳</button>
+        <button data-act="toGraveyard" title="Cimitero">🪦</button>
+        <button data-act="toExile" title="Esilio">🌀</button>
+        <button data-act="toHand" title="Torna in mano">✋</button>
       </div>`;
     }else if(zone === 'battlefield'){
       actions = `<div class="card-mini-actions">
@@ -1843,7 +1878,8 @@
         <button data-act="toBattlefield" title="Gioca in campo">▶</button>
       </div>`;
     }
-    return `<div class="game-card hoverable ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" data-img="${escapeAttr(c.imageUrl||'')}" draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
+    const dblAction = zone === 'hand' ? 'data-dblclick="toBattlefield"' : '';
+    return `<div class="game-card hoverable ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}${zone==='hand'?' — doppio clic per giocarla in campo':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" data-img="${escapeAttr(c.imageUrl||'')}" ${dblAction} draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
   }
 
   function counterControl(side, key, icon, label){
@@ -1859,6 +1895,7 @@
   function playerPanelHtml(side){
     const p = gameState[side];
     const handHtml = p.hand.map(c=>gameCardHtml(side,'hand',c)).join('');
+    const landsHtml = p.lands.map(c=>gameCardHtml(side,'lands',c)).join('');
     const bfHtml = p.battlefield.map(c=>gameCardHtml(side,'battlefield',c)).join('');
     const gyHtml = p.graveyard.map(c=>gameCardHtml(side,'graveyard',c)).join('');
     const exHtml = p.exile.map(c=>gameCardHtml(side,'exile',c)).join('');
@@ -1899,29 +1936,27 @@
         </div>
       </div>
       <div class="zone-row">
-        <div class="zone-block" style="flex:1 1 100%;">
+        <div class="zone-block play-area-block" style="flex:0 0 auto;">
+          <div class="zone-title">Terreni <span class="zone-count">${p.lands.length}</span></div>
+          <div class="zone-cards play-area lands-zone ${p.lands.length?'':'empty-zone'}" data-dropzone="lands">${landsHtml}</div>
+        </div>
+        <div class="zone-block play-area-block" style="flex:1 1 auto;">
           <div class="zone-title">
             Campo di battaglia <span class="zone-count">${p.battlefield.length}</span>
             <button class="icon-btn" data-act="add-token" style="font-size:11px;" title="Crea pedina">+ pedina</button>
             ${p.attacking.length ? `<button class="icon-btn attack-declare-btn" data-act="clear-attack" style="font-size:11px;">annulla attacco (${p.attacking.length})</button>` : ''}
           </div>
-          <div class="zone-cards battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
+          <div class="zone-cards play-area battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
         </div>
       </div>
       <div class="zone-row">
-        <div class="zone-block">
-          <div class="zone-title">
-            Cimitero <span class="zone-count">${p.graveyard.length}</span>
-            ${p.graveyard.length ? `<button class="icon-btn" data-act="toggle-graveyard" style="font-size:11px;">${p.graveyardOpen?'nascondi':'mostra'}</button>` : ''}
-          </div>
-          <div class="graveyard-list ${p.graveyardOpen?'show':''}" data-dropzone="graveyard">${gyHtml}</div>
+        <div class="zone-block play-area-block">
+          <div class="zone-title">Cimitero <span class="zone-count">${p.graveyard.length}</span></div>
+          <div class="zone-cards play-area graveyard-zone ${p.graveyard.length?'':'empty-zone'}" data-dropzone="graveyard">${gyHtml}</div>
         </div>
-        <div class="zone-block">
-          <div class="zone-title">
-            Esilio <span class="zone-count">${p.exile.length}</span>
-            ${p.exile.length ? `<button class="icon-btn" data-act="toggle-exile" style="font-size:11px;">${p.exileOpen?'nascondi':'mostra'}</button>` : ''}
-          </div>
-          <div class="graveyard-list ${p.exileOpen?'show':''}" data-dropzone="exile">${exHtml}</div>
+        <div class="zone-block play-area-block">
+          <div class="zone-title">Esilio <span class="zone-count">${p.exile.length}</span></div>
+          <div class="zone-cards play-area exile-zone ${p.exile.length?'':'empty-zone'}" data-dropzone="exile">${exHtml}</div>
         </div>
       </div>
     </div>`;
@@ -1929,6 +1964,7 @@
 
   function renderGame(){
     if(!gameState) return;
+    hidePreview(); // evita che l'anteprima resti "appesa" su una carta che sta per essere ridisegnata
     const board = $('#game-board');
     board.innerHTML = `
       <div id="turn-timer" class="turn-timer-bar"></div>
@@ -1960,14 +1996,6 @@
         logEvent(`${p.name} pesca una carta.`);
         renderGame();
       }));
-      panel.querySelectorAll('[data-act="toggle-graveyard"]').forEach(b=> b.addEventListener('click', ()=>{
-        gameState[side].graveyardOpen = !gameState[side].graveyardOpen;
-        renderGame();
-      }));
-      panel.querySelectorAll('[data-act="toggle-exile"]').forEach(b=> b.addEventListener('click', ()=>{
-        gameState[side].exileOpen = !gameState[side].exileOpen;
-        renderGame();
-      }));
       panel.querySelectorAll('[data-act="add-token"]').forEach(b=> b.addEventListener('click', ()=> openTokenPrompt(side)));
       panel.querySelectorAll('[data-act="clear-attack"]').forEach(b=> b.addEventListener('click', ()=>{
         gameState[side].attacking = [];
@@ -1985,6 +2013,15 @@
         cardEl.addEventListener('mouseenter', showPreview);
         cardEl.addEventListener('mousemove', movePreview);
         cardEl.addEventListener('mouseleave', hidePreview);
+        // Doppio clic/doppio tocco: gioca la carta istantaneamente in campo,
+        // senza dover trascinare — utile su schermi piccoli o quando il
+        // trascinamento è scomodo.
+        if(cardEl.dataset.dblclick){
+          cardEl.addEventListener('dblclick', (e)=>{
+            e.stopPropagation();
+            handleCardAction(side, zone, cuid, cardEl.dataset.dblclick);
+          });
+        }
         initCardDrag(cardEl);
       });
     });
@@ -2038,7 +2075,7 @@
       return;
     }
     const zoneMap = {
-      toBattlefield:'battlefield', toGraveyard:'graveyard', toExile:'exile',
+      toLands:'lands', toBattlefield:'battlefield', toGraveyard:'graveyard', toExile:'exile',
       toHand:'hand', toLibrary:'library', toCommand:'command'
     };
     const targetZone = zoneMap[action];
@@ -2052,7 +2089,7 @@
     const idx = src.findIndex(c => c.uid === cuid);
     if(idx < 0) return;
     const [card] = src.splice(idx, 1);
-    if(toZone !== 'battlefield') card.tapped = false;
+    if(toZone !== 'battlefield' && toZone !== 'lands') card.tapped = false;
     const atkIdx = p.attacking.indexOf(cuid);
     if(atkIdx >= 0) p.attacking.splice(atkIdx,1);
     p[toZone].push(card);
@@ -2072,6 +2109,7 @@
   function initCardDrag(cardEl){
     cardEl.addEventListener('pointerdown', (e)=>{
       if(e.target.closest('button')) return;
+      e.preventDefault();
       const side = cardEl.dataset.side;
       const zone = cardEl.dataset.zone;
       const cuid = cardEl.dataset.uid;
@@ -2085,6 +2123,7 @@
     });
     cardEl.addEventListener('pointermove', (e)=>{
       if(!dragCtx || dragCtx.cuid !== cardEl.dataset.uid) return;
+      e.preventDefault();
       const dx = e.clientX - dragCtx.startX, dy = e.clientY - dragCtx.startY;
       if(!dragCtx.moved && Math.hypot(dx,dy) < 8) return;
       if(!dragCtx.moved){
@@ -2106,12 +2145,13 @@
       const zoneEl = under && under.closest('[data-dropzone]');
       if(zoneEl) zoneEl.classList.add('drop-target-hover');
     });
-    cardEl.addEventListener('pointerup', (e)=>{
+    function endDrag(e, commit){
       if(!dragCtx || dragCtx.cuid !== cardEl.dataset.uid){ dragCtx = null; return; }
       const wasDragging = dragCtx.moved;
       if(dragCtx.ghost) dragCtx.ghost.remove();
+      cardEl.classList.remove('drag-source');
       document.querySelectorAll('[data-dropzone].drop-target-hover').forEach(z=>z.classList.remove('drop-target-hover'));
-      if(wasDragging){
+      if(commit && wasDragging && e){
         const under = document.elementFromPoint(e.clientX, e.clientY);
         const zoneEl = under && under.closest('[data-dropzone]');
         const panelEl = under && under.closest('.player-panel');
@@ -2123,7 +2163,12 @@
         }
       }
       dragCtx = null;
-    });
+    }
+    cardEl.addEventListener('pointerup', (e)=> endDrag(e, true));
+    // Il browser può interrompere il gesto (es. lo scambia per uno scroll):
+    // senza questa gestione la carta restava "agganciata" al dito e il
+    // trascinamento successivo non funzionava più finché non si ricaricava.
+    cardEl.addEventListener('pointercancel', ()=> endDrag(null, false));
   }
 
 
@@ -3624,6 +3669,133 @@
     toast('Importazione in blocco completata.');
   }
 
+  /* ---------------- Importazione CSV da app di scansione dedicate ----------------
+     Delver Lens e Dragon Shield MTG Card Manager hanno un motore di
+     riconoscimento fotocamera molto più preciso del nostro OCR nel browser,
+     ma non offrono nessuna API pubblica a cui collegarsi in tempo reale.
+     La via affidabile è: scansionare lì, esportare in CSV, importare qui.
+     Se il CSV include l'ID Scryfall (opzione consigliata in Delver Lens),
+     la carta viene recuperata in modo ESATTO, senza nessuna ambiguità. */
+  const CSV_HEADER_ALIASES = {
+    scryfallId: ['scryfall id','scryfallid','scryfall_uuid','scryfall uuid','id'],
+    quantity: ['quantity','qty','count','amount'],
+    foil: ['foil','is foil','foil_quantity'],
+    name: ['name','card_name','card','english_card_name','card name'],
+    set: ['set','set_code','set code','edition','set_name'],
+  };
+
+  function parseScanAppCsv(text){
+    const firstLine = text.split('\n')[0] || '';
+    const delim = (firstLine.includes(';') && !firstLine.includes(',')) ? ';' : ',';
+    const rows = text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(rows.length === 0) return [];
+
+    const normalize = h => h.trim().toLowerCase().replace(/^"|"$/g,'');
+    const firstCells = rows[0].split(delim).map(normalize);
+    const looksLikeHeader = firstCells.some(cell =>
+      Object.values(CSV_HEADER_ALIASES).some(aliases => aliases.includes(cell))
+    );
+
+    let colMap = null;
+    let dataRows = rows;
+    if(looksLikeHeader){
+      colMap = {};
+      firstCells.forEach((cell, idx)=>{
+        for(const [key, aliases] of Object.entries(CSV_HEADER_ALIASES)){
+          if(aliases.includes(cell)) colMap[key] = idx;
+        }
+      });
+      dataRows = rows.slice(1);
+    }
+
+    const parsed = [];
+    dataRows.forEach(row=>{
+      const cells = row.split(delim).map(c=>c.trim().replace(/^"|"$/g,''));
+      const entry = { qty:1, foil:false, scryfallId:'', name:'', setCode:'' };
+      if(colMap){
+        if(colMap.quantity != null && cells[colMap.quantity]) entry.qty = parseInt(cells[colMap.quantity])||1;
+        if(colMap.foil != null && cells[colMap.foil]){
+          const v = cells[colMap.foil].toLowerCase();
+          entry.foil = ['foil','true','yes','si','1','y'].includes(v);
+        }
+        if(colMap.scryfallId != null) entry.scryfallId = (cells[colMap.scryfallId]||'').toLowerCase();
+        if(colMap.name != null) entry.name = cells[colMap.name] || '';
+        if(colMap.set != null) entry.setCode = cells[colMap.set] || '';
+      }else{
+        // Nessuna intestazione riconosciuta: assume il formato minimo più
+        // comune per Delver Lens, "quantità, id Scryfall".
+        if(cells.length >= 2 && /^[0-9a-f-]{20,}$/i.test(cells[1])){
+          entry.qty = parseInt(cells[0]) || 1;
+          entry.scryfallId = cells[1].toLowerCase();
+        }else if(cells.length === 1){
+          entry.name = cells[0];
+        }
+      }
+      if(entry.scryfallId || entry.name) parsed.push(entry);
+    });
+    return parsed;
+  }
+
+  async function runScanAppCsvImport(){
+    const text = $('#scanapp-csv-text').value;
+    if(!text.trim()){ toast('Incolla prima il contenuto del CSV.'); return; }
+    const rows = parseScanAppCsv(text);
+    if(rows.length === 0){ toast('Non ho riconosciuto nessuna riga valida nel CSV.'); return; }
+    const progress = $('#scanapp-csv-progress');
+    const btn = $('#btn-run-scanapp-csv'); btn.disabled = true;
+    let ok = 0, fail = 0;
+
+    const withId = rows.filter(r => r.scryfallId);
+    const withoutId = rows.filter(r => !r.scryfallId);
+
+    if(withId.length > 0){
+      progress.textContent = `Recupero ${withId.length} carte tramite ID Scryfall esatto…`;
+      try{
+        const uniqueIds = Array.from(new Set(withId.map(r => r.scryfallId)));
+        const res = await fetch('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ identifiers: uniqueIds.map(id => ({id})) })
+        });
+        const json = await res.json();
+        const byId = {};
+        (json.data||[]).forEach(c => byId[c.id] = c);
+        for(const r of withId){
+          const sc = byId[r.scryfallId];
+          if(sc){ await addCardFromScryfallObj(sc, r.qty, r.foil); ok++; }
+          else{ fail++; }
+        }
+      }catch(e){
+        fail += withId.length;
+      }
+    }
+
+    for(let i=0;i<withoutId.length;i++){
+      const r = withoutId[i];
+      progress.textContent = `Elaborazione ${i+1}/${withoutId.length} (senza ID): ${r.name}…`;
+      try{
+        const sc = await scryfallSmartFind(r.name, r.setCode);
+        await addCardFromScryfallObj(sc, r.qty, r.foil);
+        ok++;
+      }catch(e){
+        fail++;
+        cards.push({
+          id: uid(), name: r.name || 'Carta sconosciuta', setName:'', setCode:r.setCode||'', rarity:'common', type:'altro',
+          quantity: r.qty, foil: r.foil, condition:'', language:'', imageUrl:'',
+          notes: 'Aggiunta senza dati Scryfall (non trovata durante importazione CSV).',
+          priceEur:null, priceFoilEur:null, priceUpdated:null, scryfallId:null
+        });
+      }
+      await sleep(90);
+    }
+
+    scheduleSave(); render();
+    progress.textContent = `Fatto: ${ok} importate correttamente, ${fail} non trovate.`;
+    $('#scanapp-csv-text').value = '';
+    btn.disabled = false;
+    toast('Importazione CSV completata.');
+  }
+
   /* ---------------- Price refresh ---------------- */
   /* Applica i dati aggiornati di Scryfall a una carta, calcolando prima la
      tendenza di prezzo (▲/▼) rispetto al valore precedentemente salvato —
@@ -3840,6 +4012,11 @@
   $('#btn-bulk-import').addEventListener('click', ()=>{ $('#bulk-overlay').classList.add('show'); $('#bulk-progress').textContent=''; });
   $('#btn-cancel-bulk').addEventListener('click', ()=> $('#bulk-overlay').classList.remove('show'));
   $('#btn-run-bulk').addEventListener('click', runBulkImport);
+  $('#toggle-scanapp-csv').addEventListener('click', ()=>{
+    const block = $('#scanapp-csv-block');
+    block.style.display = block.style.display === 'none' ? 'block' : 'none';
+  });
+  $('#btn-run-scanapp-csv').addEventListener('click', runScanAppCsvImport);
   $('#bulk-overlay').addEventListener('click', (e)=>{ if(e.target.id==='bulk-overlay') $('#bulk-overlay').classList.remove('show'); });
 
   $$('#display-toggle .view-btn').forEach(b=> b.addEventListener('click', ()=>{
