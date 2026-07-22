@@ -3629,7 +3629,7 @@
      considerando sempre il prezzo giusto (foil o normale) in base a come è
      catalogata quella specifica copia. Usata sia dall'aggiornamento singolo
      che da quello globale/automatico, per restare coerenti. */
-  function applyScryfallRefresh(c, sc){
+  async function applyScryfallRefresh(c, sc){
     const newEur = sc.prices && sc.prices.eur ? parseFloat(sc.prices.eur) : null;
     const newFoilEur = sc.prices && sc.prices.eur_foil ? parseFloat(sc.prices.eur_foil) : null;
 
@@ -3656,7 +3656,10 @@
     if(!c.setCode && sc.set) c.setCode = sc.set.toUpperCase();
     if(RARITY_META[sc.rarity] && c.rarity === 'common' && sc.rarity !== 'common') c.rarity = sc.rarity;
     if(!c.nameIt){
-      fetchItalianPrintedName(c.name).then(nameIt=>{ if(nameIt){ c.nameIt = nameIt; scheduleSave(); } });
+      // atteso davvero, non più "sparato e dimenticato": così è affidabile
+      // anche su collezioni grandi, senza rischiare di saturare Scryfall
+      const nameIt = await fetchItalianPrintedName(c.name);
+      if(nameIt) c.nameIt = nameIt;
     }
     let typeFixed = false;
     if(!c.type || c.type === 'altro'){
@@ -3678,7 +3681,7 @@
         const sc = c.scryfallId
           ? await (await fetch(`https://api.scryfall.com/cards/${c.scryfallId}`)).json()
           : await scryfallFuzzy(c.name, c.setCode);
-        const res = applyScryfallRefresh(c, sc);
+        const res = await applyScryfallRefresh(c, sc);
         if(res.typeFixed) typeFixed++;
         updated++;
       }catch(e){ /* keep old price, skip */ }
@@ -3707,7 +3710,7 @@
       const sc = c.scryfallId
         ? await (await fetch(`https://api.scryfall.com/cards/${c.scryfallId}`)).json()
         : await scryfallFuzzy(c.name, c.setCode);
-      applyScryfallRefresh(c, sc);
+      await applyScryfallRefresh(c, sc);
       scheduleSave(); render();
       toast(`Dati aggiornati per ${c.name}.`);
     }catch(e){
