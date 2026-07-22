@@ -492,6 +492,26 @@
   .deck-link-item .icon-btn{font-size:15px;}
   .deck-link-empty{color:var(--text-faint); font-size:12.5px; font-style:italic;}
 
+  /* Revisione carte scansionate in blocco */
+  .scan-review-grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:14px;
+  }
+  .scan-review-card{
+    background:var(--bg-panel); border:1px solid var(--border-soft); border-radius:8px;
+    padding:12px; display:flex; flex-direction:column; gap:8px;
+  }
+  .scan-review-card .srv-thumb{
+    width:100%; aspect-ratio:5/7; border-radius:5px; background:var(--bg-elevated) center/cover no-repeat;
+    border:1px solid var(--border);
+  }
+  .scan-review-card .srv-name{font-weight:600; font-size:13px; line-height:1.3;}
+  .scan-review-card select, .scan-review-card input[type="number"]{width:100%; font-size:12px;}
+  .scan-review-card .srv-row{display:flex; align-items:center; gap:8px; font-size:12px;}
+  .scan-review-card .srv-row label{color:var(--text-dim); font-size:11px; flex-shrink:0;}
+  .scan-review-card .srv-remove{align-self:flex-end; font-size:11px; color:var(--text-faint); background:none; border:none; cursor:pointer;}
+  .scan-review-card .srv-remove:hover{color:var(--danger);}
+  .scan-review-card .srv-price{font-family:var(--font-mono); font-size:11.5px; color:var(--accent);}
+
   /* ---------- Tavolo di gioco ---------- */
   #game-board{
     background:
@@ -814,7 +834,7 @@
       <span id="import-status"></span>
     </div>
     <div class="row">
-      <input type="search" id="search-input" class="search-bar" placeholder="Cerca per nome…">
+      <input type="search" id="search-input" class="search-bar" placeholder="Cerca per nome (anche in italiano)…">
       <div class="filters" id="rarity-filters"></div>
       <select id="set-filter"><option value="">Tutte le espansioni</option></select>
       <select id="sort-mode" title="Ordina le carte">
@@ -958,6 +978,23 @@
   <div id="game-board" style="display:none;"></div>
 </section>
 
+<section id="scan-review-section" style="display:none; padding:24px 32px;">
+  <button class="ghost" id="btn-back-from-scanreview" style="margin-bottom:18px;">← Torna al raccoglitore</button>
+  <h2 style="font-family:var(--font-display); font-size:20px; margin:0 0 6px; color:var(--text);">📷 Revisione carte scansionate</h2>
+  <p style="font-size:12.5px; color:var(--text-faint); margin:0 0 20px; line-height:1.6;">
+    Controlla ogni carta trovata: correggi l'espansione dalla tendina se non è quella giusta, spunta foil dove serve, imposta la quantità, poi salva tutte insieme nel raccoglitore.
+  </p>
+  <div id="scan-review-grid" class="scan-review-grid"></div>
+  <div class="modal-actions" style="margin-top:20px;">
+    <div class="left">
+      <button id="btn-scanreview-cancel" class="ghost">Annulla tutto</button>
+    </div>
+    <div class="left">
+      <button id="btn-scanreview-save" class="primary">✅ Salva tutte nel raccoglitore</button>
+    </div>
+  </div>
+</section>
+
 
 <footer class="note">
   I prezzi in euro sono recuperati automaticamente da Scryfall, che sincronizza i propri dati di mercato direttamente da Cardmarket, distinguendo sempre tra versione normale e foil e tra le diverse edizioni (ogni copia è collegata alla sua stampa esatta). All'apertura del raccoglitore i prezzi più vecchi di 24 ore vengono aggiornati da soli in sottofondo; la freccia ▲/▼ accanto al prezzo mostra la variazione rispetto all'ultimo controllo. Il link a fianco di ogni carta apre la relativa pagina di ricerca su Cardmarket per una verifica manuale. Ogni modifica viene salvata subito nel cloud: l'indicatore "☁" in alto conferma quando tutto è sincronizzato. Se sei offline il catalogo resta comunque modificabile e il sistema ritenta il salvataggio da solo appena torna la connessione; se provi a chiudere la pagina con modifiche non ancora sincronizzate, il browser te lo segnala prima di uscire. Per sicurezza, usa comunque "Esporta JSON" ogni tanto come backup personale.
@@ -997,6 +1034,7 @@
       </div>
     </div>
     <input type="hidden" id="f-scryfallid">
+    <input type="hidden" id="f-nameit">
     <input type="hidden" id="f-pricefoileur">
     <div class="field-row">
       <div class="field">
@@ -1115,13 +1153,23 @@
     <h2>Scansiona carta</h2>
     <img id="scan-preview-img" src="" alt="" style="width:100%; max-height:280px; object-fit:contain; border-radius:8px; margin-bottom:14px; border:1px solid var(--border); background:var(--bg-input);">
     <p id="scan-status" style="font-size:13px; color:var(--text-dim); min-height:40px;">Preparazione…</p>
+    <div id="scan-success-block" style="display:none;">
+      <div class="modal-actions">
+        <div class="left">
+          <button id="btn-scan-continue" class="ghost">📷 Scansiona un'altra</button>
+        </div>
+        <div class="left">
+          <button id="btn-scan-review" class="primary">✅ Rivedi e salva (<span id="scan-pending-count">0</span>)</button>
+        </div>
+      </div>
+    </div>
     <p class="bulk-help" style="text-align:left;">
-      Consigli per un riconoscimento migliore: sfondo semplice e uniforme dietro la carta, buona luce evitando riflessi sulla superficie, carta ben dritta e a fuoco, titolo in alto ben leggibile e non tagliato dall'inquadratura.
+      Consigli per un riconoscimento migliore: sfondo semplice e uniforme dietro la carta, buona luce evitando riflessi sulla superficie, carta ben dritta e a fuoco, titolo in alto ben leggibile e non tagliato dall'inquadratura. Puoi scansionare tante carte di seguito e rivederle tutte insieme alla fine.
     </p>
     <div id="scan-fallback" style="display:none; margin-bottom:14px;">
       <a href="https://lens.google.com" target="_blank" rel="noopener" style="color:var(--accent); font-size:12.5px; text-decoration:none;">Prova a identificarla con Google Lens ↗</a>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" id="scan-default-actions">
       <div class="left">
         <button id="btn-scan-cancel" class="ghost">Annulla</button>
       </div>
@@ -2097,6 +2145,7 @@
     if(extra.priceUpdated) cards[idx].priceUpdated = extra.priceUpdated;
     if(!cards[idx].scryfallId && extra.scryfallId) cards[idx].scryfallId = extra.scryfallId;
     if(!cards[idx].scryfallUri && extra.scryfallUri) cards[idx].scryfallUri = extra.scryfallUri;
+    if(!cards[idx].nameIt && extra.nameIt) cards[idx].nameIt = extra.nameIt;
   }
 
 
@@ -2257,7 +2306,12 @@
       // Se uno o più tipi sono selezionati, mostra SOLO quelli, escludendo gli altri.
       if(activeTypes.size > 0 && !activeTypes.has(c.type || 'altro')) return false;
       if(setFilter && (c.setName || 'Senza espansione') !== setFilter) return false;
-      if(searchTerm && !c.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      if(searchTerm){
+        const q = searchTerm.toLowerCase();
+        const matchesEn = c.name.toLowerCase().includes(q);
+        const matchesIt = c.nameIt && c.nameIt.toLowerCase().includes(q);
+        if(!matchesEn && !matchesIt) return false;
+      }
       return true;
     }).sort(sortComparator);
   }
@@ -2777,6 +2831,18 @@
     $('#f-name').value = sc.name;
     acClose();
     loadPrintingsForName(sc.name, sc.set, true);
+    // se il suggerimento scelto era già la stampa italiana, il nome è già qui;
+    // altrimenti prova a recuperarlo in sottofondo, senza bloccare il salvataggio
+    if(sc.lang === 'it' && sc.printed_name){
+      $('#f-nameit').value = sc.printed_name;
+    }else{
+      $('#f-nameit').value = '';
+      fetchItalianPrintedName(sc.name).then(nameIt=>{
+        if(nameIt && $('#f-name').value.trim().toLowerCase() === sc.name.toLowerCase()){
+          $('#f-nameit').value = nameIt;
+        }
+      });
+    }
     toast('Ricerca delle espansioni disponibili in corso…');
   }
 
@@ -2846,6 +2912,7 @@
     closeSetPicker();
     renderSetPickerDisplay();
     $('#f-scryfallid').value = '';
+    $('#f-nameit').value = '';
     $('#f-pricefoileur').value = '';
     currentPrintings = [];
     $('#f-rarity').value = 'common';
@@ -2877,6 +2944,7 @@
     $('#f-price').value = (c.priceEur ?? '');
     $('#f-pricefoileur').value = (c.priceFoilEur ?? '');
     $('#f-scryfallid').value = c.scryfallId || '';
+    $('#f-nameit').value = c.nameIt || '';
     $('#f-notes').value = c.notes || '';
     // mostra subito l'espansione attuale, poi prova a trovarla nella tendina
     currentPrintings = [];
@@ -2906,6 +2974,7 @@
       priceEur: $('#f-price').value !== '' ? parseFloat($('#f-price').value) : null,
       priceFoilEur: $('#f-pricefoileur').value !== '' ? parseFloat($('#f-pricefoileur').value) : null,
       scryfallId: $('#f-scryfallid').value || null,
+      nameIt: $('#f-nameit').value.trim() || '',
       notes: $('#f-notes').value.trim()
     };
   }
@@ -2972,6 +3041,23 @@
     throw new Error('Carta non trovata (né in inglese né nel nome tradotto).');
   }
 
+  /* Recupera il nome stampato in italiano di una carta (se esiste una stampa
+     italiana su Scryfall) e lo salva sulla carta stessa: così la ricerca
+     "Cerca per nome" nel raccoglitore può trovarla anche digitando il nome
+     italiano, senza bisogno di alcuna chiamata di rete al momento della
+     ricerca (il nome italiano è già salvato in locale). Fallisce in modo
+     innocuo se non trovato o offline — non blocca mai l'aggiunta/l'uso della carta. */
+  async function fetchItalianPrintedName(name){
+    try{
+      const q = '!"' + name.replace(/"/g,'') + '" lang:it';
+      const res = await fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent(q) + '&unique=prints');
+      if(!res.ok) return '';
+      const json = await res.json();
+      const first = json.data && json.data[0];
+      return (first && first.printed_name) ? first.printed_name : '';
+    }catch(e){ return ''; }
+  }
+
   function scryfallToCardPatch(sc){
     const img = (sc.image_uris && sc.image_uris.normal) ||
                 (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
@@ -3003,6 +3089,11 @@
       const sc = await scryfallSmartFind(name, setCode);
       $('#f-name').value = sc.name;
       await loadPrintingsForName(sc.name, sc.set, true);
+      if(sc.lang === 'it' && sc.printed_name){
+        $('#f-nameit').value = sc.printed_name;
+      }else{
+        fetchItalianPrintedName(sc.name).then(nameIt=>{ if(nameIt) $('#f-nameit').value = nameIt; });
+      }
       toast('Dati recuperati da Scryfall.');
     }catch(e){
       toast('Carta non trovata su Scryfall. Controlla il nome o inserisci i dati a mano.');
@@ -3033,15 +3124,23 @@
 
   async function addCardFromScryfallObj(sc, qty, foil){
     const patch = scryfallToCardPatch(sc);
+    patch.nameIt = (sc.lang === 'it' && sc.printed_name) ? sc.printed_name : '';
     foil = !!foil;
     const dupIdx = findDuplicateIndex(patch.name, patch.setCode, foil);
+    let targetCard;
     if(dupIdx >= 0){
       mergeQuantityIntoExisting(dupIdx, qty||1, patch);
+      targetCard = cards[dupIdx];
     }else{
-      cards.push({
+      targetCard = {
         id: uid(), quantity: qty||1, foil, condition:'', language:'', notes:'',
         ...patch
-      });
+      };
+      cards.push(targetCard);
+    }
+    // recupero del nome italiano in sottofondo, senza rallentare l'importazione
+    if(!targetCard.nameIt){
+      fetchItalianPrintedName(patch.name).then(nameIt=>{ if(nameIt){ targetCard.nameIt = nameIt; scheduleSave(); } });
     }
   }
 
@@ -3183,6 +3282,20 @@
     $('#scan-fallback').style.display = isError ? 'block' : 'none';
     $('#btn-scan-retry').style.display = isError ? 'inline-block' : 'none';
     $('#btn-scan-manual').style.display = isError ? 'inline-block' : 'none';
+    $('#scan-default-actions').style.display = 'flex';
+    $('#scan-success-block').style.display = 'none';
+  }
+
+  /* Elenco delle carte scansionate in questa sessione, in attesa di revisione
+     prima di essere salvate tutte insieme nel raccoglitore. */
+  let pendingScans = [];
+
+  function setScanSuccessState(sc, printings){
+    $('#scan-default-actions').style.display = 'none';
+    $('#scan-fallback').style.display = 'none';
+    $('#scan-success-block').style.display = 'block';
+    $('#scan-pending-count').textContent = pendingScans.length;
+    $('#scan-status').textContent = `Trovata: ${sc.name}. Carte in attesa di revisione: ${pendingScans.length}.`;
   }
 
   function openScanOverlay(dataUrl){
@@ -3304,14 +3417,108 @@
       await loadTesseractScript();
       setScanStatus('Lettura del testo dalla foto…', false);
       const sc = await recognizeCardFromImage(dataUrl);
-      closeScanOverlay();
-      openAddModal();
-      $('#f-name').value = sc.name;
-      await loadPrintingsForName(sc.name, sc.set, true);
-      toast(`Carta riconosciuta: ${sc.name}. Controlla i dati e salva.`);
+
+      // recupera tutte le edizioni note della carta, per la tendina di revisione
+      let printings = [];
+      try{
+        const res = await fetch('https://api.scryfall.com/cards/search?q=' + encodeURIComponent('!"'+sc.name+'"') + '&unique=prints&order=released&dir=desc');
+        if(res.ok){ const json = await res.json(); printings = json.data || []; }
+      }catch(err){ /* se fallisce, si userà solo la stampa già trovata */ }
+      if(printings.length === 0) printings = [sc];
+      let selectedIdx = printings.findIndex(p => p.id === sc.id);
+      if(selectedIdx < 0) selectedIdx = 0;
+
+      pendingScans.push({ uid: uid(), name: sc.name, foil: false, quantity: 1, printings, selectedIdx });
+      setScanSuccessState(sc, printings);
     }catch(err){
       setScanStatus('Non sono riuscito a riconoscere il nome della carta. Riprova con più luce, inquadrando bene il titolo in alto, oppure inseriscila a mano.', true);
     }
+  }
+
+  /* ---------------- Revisione carte scansionate in blocco ---------------- */
+  function scanReviewCardHtml(entry){
+    const sc = entry.printings[entry.selectedIdx] || entry.printings[0];
+    const img = sc ? ((sc.image_uris && sc.image_uris.normal) ||
+      (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '') : '';
+    const priceEur = sc && sc.prices ? (entry.foil ? sc.prices.eur_foil : sc.prices.eur) : null;
+    const priceTxt = priceEur ? `€${parseFloat(priceEur).toFixed(2)}` : '—';
+    const options = entry.printings.map((p,i)=>{
+      const m = RARITY_META[p.rarity] || RARITY_META.common;
+      const year = p.released_at ? p.released_at.slice(0,4) : '';
+      return `<option value="${i}" ${i===entry.selectedIdx?'selected':''}>${escapeHtml(p.set_name)} (${(p.set||'').toUpperCase()}) — ${m.label}${year?' · '+year:''}</option>`;
+    }).join('');
+    return `<div class="scan-review-card" data-uid="${entry.uid}">
+      <div class="srv-thumb" style="${img?`background-image:url('${escapeAttr(img)}')`:''}"></div>
+      <div class="srv-name">${escapeHtml(entry.name)}</div>
+      <select data-field="printing">${options}</select>
+      <div class="srv-row">
+        <label>Foil</label>
+        <input type="checkbox" data-field="foil" ${entry.foil?'checked':''}>
+        <label style="margin-left:auto;">Quantità</label>
+        <input type="number" data-field="qty" min="1" value="${entry.quantity}" style="width:56px;">
+      </div>
+      <div class="srv-price">${priceTxt}</div>
+      <button class="srv-remove" data-action="remove">✕ Rimuovi</button>
+    </div>`;
+  }
+
+  function renderScanReview(){
+    const grid = $('#scan-review-grid');
+    if(pendingScans.length === 0){
+      grid.innerHTML = `<div class="deck-link-empty">Nessuna carta in attesa di revisione — scansiona qualche carta prima.</div>`;
+      return;
+    }
+    grid.innerHTML = pendingScans.map(scanReviewCardHtml).join('');
+    grid.querySelectorAll('.scan-review-card').forEach(card=>{
+      const uidVal = card.dataset.uid;
+      const entry = pendingScans.find(p => p.uid === uidVal);
+      card.querySelector('[data-field="printing"]').addEventListener('change', (e)=>{
+        entry.selectedIdx = parseInt(e.target.value);
+        renderScanReview();
+      });
+      card.querySelector('[data-field="foil"]').addEventListener('change', (e)=>{
+        entry.foil = e.target.checked;
+        renderScanReview();
+      });
+      card.querySelector('[data-field="qty"]').addEventListener('change', (e)=>{
+        entry.quantity = Math.max(1, parseInt(e.target.value)||1);
+      });
+      card.querySelector('[data-action="remove"]').addEventListener('click', ()=>{
+        pendingScans = pendingScans.filter(p => p.uid !== uidVal);
+        renderScanReview();
+      });
+    });
+  }
+
+  function openScanReviewSection(){
+    closeScanOverlay();
+    $('#toolbar').style.display = 'none';
+    $('#main').style.display = 'none';
+    $('#decks-section').style.display = 'none';
+    $('#game-section').style.display = 'none';
+    $('#scan-review-section').style.display = 'block';
+    renderScanReview();
+  }
+  function closeScanReviewSection(){
+    $('#scan-review-section').style.display = 'none';
+    $('#toolbar').style.display = '';
+    $('#main').style.display = '';
+  }
+
+  async function commitAllPendingScans(){
+    if(pendingScans.length === 0){ closeScanReviewSection(); return; }
+    const btn = $('#btn-scanreview-save');
+    btn.disabled = true; btn.textContent = 'Salvataggio…';
+    for(const entry of pendingScans){
+      const sc = entry.printings[entry.selectedIdx] || entry.printings[0];
+      await addCardFromScryfallObj(sc, entry.quantity, entry.foil);
+    }
+    const count = pendingScans.length;
+    pendingScans = [];
+    scheduleSave(); render();
+    btn.disabled = false; btn.textContent = '✅ Salva tutte nel raccoglitore';
+    closeScanReviewSection();
+    toast(`Aggiunte ${count} carte al raccoglitore.`);
   }
 
   /* ---------------- Bulk text import ---------------- */
@@ -3448,6 +3655,9 @@
     if(!c.setName && sc.set_name) c.setName = sc.set_name;
     if(!c.setCode && sc.set) c.setCode = sc.set.toUpperCase();
     if(RARITY_META[sc.rarity] && c.rarity === 'common' && sc.rarity !== 'common') c.rarity = sc.rarity;
+    if(!c.nameIt){
+      fetchItalianPrintedName(c.name).then(nameIt=>{ if(nameIt){ c.nameIt = nameIt; scheduleSave(); } });
+    }
     let typeFixed = false;
     if(!c.type || c.type === 'altro'){
       const typeLine = sc.type_line || (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].type_line) || '';
@@ -3624,9 +3834,24 @@
   }
   $('#btn-scan-card').addEventListener('click', ()=> $('#scan-input').click());
   $('#scan-input').addEventListener('change', handleScanFile);
-  $('#btn-scan-cancel').addEventListener('click', closeScanOverlay);
+  $('#btn-scan-cancel').addEventListener('click', ()=>{
+    if(pendingScans.length > 0 && !confirm(`Hai già scansionato ${pendingScans.length} carta/e in questa sessione. Chiudendo ora restano comunque in attesa: potrai rivederle e salvarle in seguito da "📷 Scansiona carta". Vuoi chiudere?`)){
+      return;
+    }
+    closeScanOverlay();
+  });
   $('#btn-scan-retry').addEventListener('click', ()=>{ closeScanOverlay(); $('#scan-input').click(); });
   $('#btn-scan-manual').addEventListener('click', ()=>{ closeScanOverlay(); openAddModal(); });
+  $('#btn-scan-continue').addEventListener('click', ()=> $('#scan-input').click());
+  $('#btn-scan-review').addEventListener('click', openScanReviewSection);
+  $('#btn-back-from-scanreview').addEventListener('click', cancelScanReview);
+  $('#btn-scanreview-cancel').addEventListener('click', cancelScanReview);
+  $('#btn-scanreview-save').addEventListener('click', commitAllPendingScans);
+  function cancelScanReview(){
+    if(pendingScans.length > 0 && !confirm(`Annullare la revisione? Le ${pendingScans.length} carte scansionate finora andranno perse.`)) return;
+    pendingScans = [];
+    closeScanReviewSection();
+  }
   $('#scan-overlay').addEventListener('click', (e)=>{ if(e.target.id==='scan-overlay') closeScanOverlay(); });
   $('#btn-cancel-modal').addEventListener('click', closeModal);
   $('#btn-save-card').addEventListener('click', saveCardFromForm);
