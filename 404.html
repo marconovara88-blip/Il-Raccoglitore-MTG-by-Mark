@@ -2608,6 +2608,7 @@
       updateSyncIndicator('ok');
     }catch(e){
       cards = [];
+      console.error('Errore caricamento raccoglitore:', e);
       updateSyncIndicator('error', '⚠ Impossibile contattare il cloud');
       toast('Non riesco a verificare i dati salvati in precedenza. Se il raccoglitore era già popolato, ricarica la pagina prima di modificarlo per non rischiare di sovrascriverlo.', 7000);
     }
@@ -2625,6 +2626,11 @@
     saveInFlight = true;
     updateSyncIndicator('saving');
     try{
+      const payload = JSON.stringify({ cards, savedGameDecks });
+      const sizeKB = Math.round(new Blob([payload]).size / 1024);
+      if(useFirebase && sizeKB > 950){
+        throw new Error(`Raccoglitore troppo grande per il documento cloud (${sizeKB} KB, limite di Firestore ~1024 KB). Contattami: serve dividerlo in più documenti.`);
+      }
       if(useFirebase){
         // Formato compatto: tutto in un unico campo testuale "data". Rende il
         // documento leggibile e scrivibile anche dal service worker con una
@@ -2632,9 +2638,9 @@
         // Firebase in background — è quello che permette all'aggiornamento
         // prezzi di proseguire anche ad app chiusa (vedi più sotto).
         await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc)
-          .set({ data: JSON.stringify({ cards, savedGameDecks }), updatedAt: new Date().toISOString() });
+          .set({ data: payload, updatedAt: new Date().toISOString() });
       }else{
-        const res = await window.storage.set('collection', JSON.stringify({ cards, savedGameDecks }), false);
+        const res = await window.storage.set('collection', payload, false);
         if(!res) throw new Error('empty response');
       }
       storageAvailable = true;
@@ -2643,7 +2649,9 @@
       clearTimeout(retryTimer);
     }catch(e){
       storageAvailable = false;
-      updateSyncIndicator('error');
+      const msg = (e && e.message) ? e.message : String(e);
+      console.error('Errore salvataggio raccoglitore:', e);
+      updateSyncIndicator('error', `⚠ Non sincronizzato: ${msg.slice(0,140)}`);
       scheduleRetry();
     }finally{
       saveInFlight = false;
