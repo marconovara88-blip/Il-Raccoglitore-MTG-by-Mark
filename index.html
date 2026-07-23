@@ -612,7 +612,28 @@
   }
   .play-area{min-height:150px; background:rgba(0,0,0,0.15); border:1px dashed #33472e; align-content:flex-start;}
   .battlefield-zone{min-height:190px;}
-  .lands-zone{min-height:150px;}
+  .lands-bar{min-height:90px;}
+
+  /* Campo di gioco: due colonne — a sinistra Campo di battaglia + Terre,
+     a destra Grimorio/Comandante + Cimitero/Esilio (piccoli, a mucchio). */
+  .field-grid{display:grid; grid-template-columns:1fr auto; gap:14px; margin-bottom:12px;}
+  .field-col-left, .field-col-right{display:flex; flex-direction:column; gap:10px;}
+  .zone-block-row{display:flex; gap:14px;}
+  .card-pile{
+    position:relative; width:52px; height:73px; border-radius:5px;
+    background:var(--bg-elevated) center/cover no-repeat; border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  }
+  .card-pile .pile-icon{font-size:18px; opacity:.6;}
+  .card-pile .pile-count{
+    position:absolute; bottom:-6px; right:-6px; min-width:18px; height:18px; padding:0 4px;
+    border-radius:9px; background:var(--accent); color:#1c1712; font-family:var(--font-mono);
+    font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  @media (max-width:760px){
+    .field-grid{grid-template-columns:1fr;}
+  }
   .game-card{
     position:relative; width:80px; height:112px; border-radius:6px; flex-shrink:0;
     background:var(--bg-elevated) center/cover no-repeat; border:1px solid var(--border);
@@ -676,7 +697,6 @@
   .library-stack .num{font-family:var(--font-mono); font-weight:700; font-size:16px; color:var(--accent);}
   .library-stack .lbl{font-size:9px; color:var(--text-faint);}
   .library-stack.pulse-once{animation:drawPulse .28s ease;}
-  .graveyard-zone, .exile-zone{min-height:150px;}
 
   .game-log-panel{
     background:rgba(0,0,0,0.25); border:1px solid var(--border-soft); border-radius:10px;
@@ -1082,6 +1102,18 @@
     <div class="modal-actions">
       <div></div>
       <div class="left"><button class="ghost" id="btn-library-search-cancel">Chiudi senza scegliere</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="zone-viewer-overlay">
+  <div class="modal" style="max-width:900px;">
+    <h2 id="zone-viewer-title">Cimitero</h2>
+    <p class="bulk-help">Passa il mouse (o tieni premuto) su una carta per le azioni disponibili — le mosse fatte da qui si riflettono subito sul tavolo.</p>
+    <div id="zone-viewer-grid" class="scan-review-grid" style="grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));"></div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="left"><button class="ghost" id="btn-zone-viewer-close">Chiudi</button></div>
     </div>
   </div>
 </div>
@@ -1565,6 +1597,7 @@
     $('#game-board').style.display = 'none';
     $('#mulligan-overlay').classList.remove('show');
     $('#library-search-overlay').classList.remove('show');
+    $('#zone-viewer-overlay').classList.remove('show');
     $('#game-home').style.display = 'block';
     renderSavedDecksGrid();
     populateGameDeckSelects();
@@ -2028,6 +2061,51 @@
     renderGame();
   }
 
+  /* ---------------- Consultazione completa di una zona (cimitero/esilio) ----------------
+     Cimitero ed esilio sono mostrati sul tavolo come un piccolo mucchio
+     compatto (solo l'ultima carta + conteggio): questo overlay le mostra
+     tutte, con le stesse azioni disponibili sul tavolo (torna in mano,
+     gioca in campo...), che si riflettono subito anche fuori dall'overlay. */
+  let zoneViewerSide = null;
+  let zoneViewerZone = null;
+
+  function openZoneViewer(side, zone){
+    zoneViewerSide = side;
+    zoneViewerZone = zone;
+    $('#zone-viewer-title').textContent = `${ZONE_LABELS[zone]} — ${gameState[side].name}`;
+    renderZoneViewerGrid();
+    $('#zone-viewer-overlay').classList.add('show');
+  }
+
+  function renderZoneViewerGrid(){
+    hidePreview();
+    const p = gameState[zoneViewerSide];
+    const list = p[zoneViewerZone];
+    const grid = $('#zone-viewer-grid');
+    if(!list || list.length === 0){
+      grid.innerHTML = `<div class="deck-link-empty">Vuoto.</div>`;
+      return;
+    }
+    grid.innerHTML = list.map(c => gameCardHtml(zoneViewerSide, zoneViewerZone, c)).join('');
+    grid.querySelectorAll('.game-card').forEach(cardEl=>{
+      const cuid = cardEl.dataset.uid;
+      cardEl.querySelectorAll('button[data-act]').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          handleCardAction(zoneViewerSide, zoneViewerZone, cuid, btn.dataset.act);
+          renderZoneViewerGrid(); // resta aperto, aggiornato, per continuare a scegliere altre carte
+        });
+      });
+      cardEl.addEventListener('mouseenter', showPreview);
+      cardEl.addEventListener('mousemove', movePreview);
+      cardEl.addEventListener('mouseleave', hidePreview);
+    });
+  }
+
+  function closeZoneViewer(){
+    $('#zone-viewer-overlay').classList.remove('show');
+  }
+
   /* ---------------- Fasi di turno e pila ---------------- */
   const TURN_PHASES = ['Untap','Upkeep','Pesca','1ª Main Phase','Combattimento','2ª Main Phase','Fine turno'];
 
@@ -2144,7 +2222,7 @@
     $('#btn-timer-pass').addEventListener('click', passTurnTimer);
   }
 
-  const ZONE_LABELS = { hand:'Mano', lands:'Terreni', battlefield:'Campo', graveyard:'Cimitero', exile:'Esilio', library:'Grimorio', command:'Comando' };
+  const ZONE_LABELS = { hand:'Mano', lands:'Terre', battlefield:'Campo', graveyard:'Cimitero', exile:'Esilio', library:'Grimorio', command:'Comando' };
 
   function logEvent(text){
     if(!gameState) return;
@@ -2222,13 +2300,23 @@
     </div>`;
   }
 
+  /* Mucchio compatto per cimitero/esilio: mostra solo l'ultima carta finita
+     lì (o un'icona generica se vuoto) più il conteggio — non tutte le carte
+     una per una. Per vederle davvero tutte c'è il pulsante "👁 Vedi tutte". */
+  function pileBoxHtml(zone, list, icon){
+    const top = list.length ? list[list.length-1] : null;
+    const bg = top && top.imageUrl ? `style="background-image:url('${escapeAttr(top.imageUrl)}')"` : '';
+    return `<div class="card-pile" data-dropzone="${zone}" ${bg} title="${top ? escapeAttr(top.name) : ''}">
+      ${!top ? `<span class="pile-icon">${icon}</span>` : ''}
+      <span class="pile-count">${list.length}</span>
+    </div>`;
+  }
+
   function playerPanelHtml(side){
     const p = gameState[side];
     const handHtml = p.hand.map(c=>gameCardHtml(side,'hand',c)).join('');
     const landsHtml = p.lands.map(c=>gameCardHtml(side,'lands',c)).join('');
     const bfHtml = p.battlefield.map(c=>gameCardHtml(side,'battlefield',c)).join('');
-    const gyHtml = p.graveyard.map(c=>gameCardHtml(side,'graveyard',c)).join('');
-    const exHtml = p.exile.map(c=>gameCardHtml(side,'exile',c)).join('');
     const cmdHtml = p.command.map(c=>gameCardHtml(side,'command',c)).join('');
 
     const headerRow = `
@@ -2246,40 +2334,11 @@
         </div>
       </div>`;
 
-    const miscRow = `
-      <div class="zone-row">
-        <div class="zone-block" style="flex:0 0 auto;">
-          <div class="zone-title">Grimorio</div>
-          <div class="library-stack" data-act="draw" data-dropzone="library">
-            <span class="num">${p.library.length}</span>
-            <span class="lbl">pesca</span>
-          </div>
-          <button class="icon-btn" data-act="search-library" style="margin-top:4px; font-size:10px; width:100%;">🔍 Cerca</button>
-        </div>
-        <div class="zone-block" style="flex:0 0 auto;">
-          <div class="zone-title">
-            Comandante
-            ${p.command.length ? `<a href="${edhrecCombosLink(p.command[0].name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per ${escapeAttr(p.command[0].name)}">🔗 Combo</a>` : ''}
-          </div>
-          <div class="zone-cards ${p.command.length?'':'empty-zone'}" data-dropzone="command" style="min-width:60px;">${cmdHtml}</div>
-        </div>
+    // Campo di battaglia in alto a sinistra, le Terre (barra lunga) sotto di
+    // esso: la colonna sinistra del campo di gioco vero e proprio.
+    const fieldColLeft = `
+      <div class="field-col-left">
         <div class="zone-block play-area-block">
-          <div class="zone-title">Cimitero <span class="zone-count">${p.graveyard.length}</span></div>
-          <div class="zone-cards play-area graveyard-zone ${p.graveyard.length?'':'empty-zone'}" data-dropzone="graveyard">${gyHtml}</div>
-        </div>
-        <div class="zone-block play-area-block">
-          <div class="zone-title">Esilio <span class="zone-count">${p.exile.length}</span></div>
-          <div class="zone-cards play-area exile-zone ${p.exile.length?'':'empty-zone'}" data-dropzone="exile">${exHtml}</div>
-        </div>
-      </div>`;
-
-    const fieldRow = `
-      <div class="zone-row">
-        <div class="zone-block play-area-block" style="flex:0 0 auto;">
-          <div class="zone-title">Terreni <span class="zone-count">${p.lands.length}</span></div>
-          <div class="zone-cards play-area lands-zone ${p.lands.length?'':'empty-zone'}" data-dropzone="lands">${landsHtml}</div>
-        </div>
-        <div class="zone-block play-area-block" style="flex:1 1 auto;">
           <div class="zone-title">
             Campo di battaglia <span class="zone-count">${p.battlefield.length}</span>
             <button class="icon-btn" data-act="add-token" style="font-size:11px;" title="Crea pedina">+ pedina</button>
@@ -2287,7 +2346,52 @@
           </div>
           <div class="zone-cards play-area battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
         </div>
+        <div class="zone-block play-area-block">
+          <div class="zone-title">Terre <span class="zone-count">${p.lands.length}</span></div>
+          <div class="zone-cards play-area lands-bar ${p.lands.length?'':'empty-zone'}" data-dropzone="lands">${landsHtml}</div>
+        </div>
       </div>`;
+
+    // Grimorio (+ Comandante a fianco) in alto a destra, Cimitero ed Esilio
+    // — piccoli, a mucchio — sotto di esso: la colonna destra.
+    const fieldColRight = `
+      <div class="field-col-right">
+        <div class="zone-block-row">
+          <div class="zone-block" style="flex:0 0 auto;">
+            <div class="zone-title">Grimorio</div>
+            <div class="library-stack" data-act="draw" data-dropzone="library">
+              <span class="num">${p.library.length}</span>
+              <span class="lbl">pesca</span>
+            </div>
+            <button class="icon-btn" data-act="search-library" style="margin-top:4px; font-size:10px; width:100%;">🔍 Cerca</button>
+          </div>
+          <div class="zone-block" style="flex:0 0 auto;">
+            <div class="zone-title">
+              Comandante
+              ${p.command.length ? `<a href="${edhrecCombosLink(p.command[0].name)}" target="_blank" rel="noopener" class="deck-combo-link" title="Combo EDHREC per ${escapeAttr(p.command[0].name)}">🔗 Combo</a>` : ''}
+            </div>
+            <div class="zone-cards ${p.command.length?'':'empty-zone'}" data-dropzone="command" style="min-width:60px;">${cmdHtml}</div>
+          </div>
+        </div>
+        <div class="zone-block-row">
+          <div class="zone-block" style="flex:0 0 auto;">
+            <div class="zone-title">
+              Cimitero <span class="zone-count">${p.graveyard.length}</span>
+              <button class="icon-btn" data-act="view-graveyard" title="Vedi tutte le carte">👁</button>
+            </div>
+            ${pileBoxHtml('graveyard', p.graveyard, '🪦')}
+          </div>
+          <div class="zone-block" style="flex:0 0 auto;">
+            <div class="zone-title">
+              Esilio <span class="zone-count">${p.exile.length}</span>
+              <button class="icon-btn" data-act="view-exile" title="Vedi tutte le carte">👁</button>
+            </div>
+            ${pileBoxHtml('exile', p.exile, '🌀')}
+          </div>
+        </div>
+      </div>`;
+
+    const fieldRow = `<div class="field-grid">${fieldColLeft}${fieldColRight}</div>`;
 
     const handRow = `
       <div class="zone-row">
@@ -2301,8 +2405,8 @@
     // lato fa l'opposto: così i due campi di battaglia si toccano al centro
     // del tavolo, come su un tavolo fisico vero.
     const bodyOrder = side === 'claude'
-      ? headerRow + handRow + miscRow + fieldRow
-      : headerRow + fieldRow + miscRow + handRow;
+      ? headerRow + handRow + fieldRow
+      : headerRow + fieldRow + handRow;
 
     return `<div class="player-panel" data-side="${side}">${bodyOrder}</div>`;
   }
@@ -2345,6 +2449,8 @@
       }));
       panel.querySelectorAll('[data-act="add-token"]').forEach(b=> b.addEventListener('click', ()=> openTokenPrompt(side)));
       panel.querySelectorAll('[data-act="search-library"]').forEach(b=> b.addEventListener('click', ()=> openLibrarySearch(side)));
+      panel.querySelectorAll('[data-act="view-graveyard"]').forEach(b=> b.addEventListener('click', ()=> openZoneViewer(side, 'graveyard')));
+      panel.querySelectorAll('[data-act="view-exile"]').forEach(b=> b.addEventListener('click', ()=> openZoneViewer(side, 'exile')));
       panel.querySelectorAll('[data-act="clear-attack"]').forEach(b=> b.addEventListener('click', ()=>{
         gameState[side].attacking = [];
         renderGame();
@@ -4520,6 +4626,7 @@
   $('#btn-library-search-cancel').addEventListener('click', ()=>{
     $('#library-search-overlay').classList.remove('show');
   });
+  $('#btn-zone-viewer-close').addEventListener('click', closeZoneViewer);
 
   $('#btn-new-deck').addEventListener('click', ()=> openDeckEditor(null));
   $('#btn-back-from-editor').addEventListener('click', closeDeckEditor);
