@@ -715,6 +715,9 @@
     animation: cardEnter .28s ease;
   }
   .mulligan-status{font-size:12px; color:var(--text-dim); min-height:18px;}
+  .mulligan-bottom-picker .mulligan-card{cursor:pointer; transition:transform .12s ease, opacity .12s ease;}
+  .mulligan-bottom-picker .mulligan-card.picked{opacity:.35; transform:translateY(8px); box-shadow:0 0 0 2px var(--accent);}
+  .mulligan-bottom-note{font-size:12px; color:var(--accent); margin:6px 0;}
 
   /* Ricerca nel grimorio */
   .lib-search-card{
@@ -1069,13 +1072,18 @@
 <div class="overlay" id="mulligan-overlay">
   <div class="modal" style="max-width:920px;">
     <h2>Mani di apertura</h2>
-    <p class="bulk-help">Controlla la mano: tieni queste carte oppure chiedi un mulligan (si rimescola e se ne pescano di nuove, una in meno ad ogni mulligan). Quando entrambi avete confermato, la partita comincia.</p>
+    <p class="bulk-help">Ogni mulligan rimescola la mano e ne pesca una nuova da 7 carte (regola "London"): il numero di carte da mettere in fondo al grimorio si decide solo alla fine, quando tieni la mano.</p>
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); margin-bottom:16px; cursor:pointer;">
+      <input type="checkbox" id="mulligan-free-first" checked style="width:16px; height:16px;">
+      Primo mulligan gratuito (regola Commander) — non conta ai fini delle carte da mettere in fondo
+    </label>
     <div class="mulligan-columns">
       <div class="mulligan-col">
         <h3>🤖 Claude</h3>
         <div class="mulligan-hand" id="mulligan-hand-claude"></div>
         <p class="mulligan-status" id="mulligan-status-claude"></p>
-        <div class="modal-actions">
+        <div class="mulligan-bottom-picker" id="mulligan-bottom-picker-claude" style="display:none;"></div>
+        <div class="modal-actions" id="mulligan-actions-claude">
           <div class="left"><button class="ghost" data-side="claude" data-act="mull">Mulligan</button></div>
           <div class="left"><button class="primary" data-side="claude" data-act="keep">Tieni mano</button></div>
         </div>
@@ -1084,7 +1092,8 @@
         <h3>🙂 Tu</h3>
         <div class="mulligan-hand" id="mulligan-hand-player"></div>
         <p class="mulligan-status" id="mulligan-status-player"></p>
-        <div class="modal-actions">
+        <div class="mulligan-bottom-picker" id="mulligan-bottom-picker-player" style="display:none;"></div>
+        <div class="modal-actions" id="mulligan-actions-player">
           <div class="left"><button class="ghost" data-side="player" data-act="mull">Mulligan</button></div>
           <div class="left"><button class="primary" data-side="player" data-act="keep">Tieni mano</button></div>
         </div>
@@ -1953,11 +1962,20 @@
     }
   }
 
-  /* ---------------- Mani di apertura / mulligan ---------------- */
+  /* ---------------- Mani di apertura / mulligan ----------------
+     Regola "London": ogni mulligan pesca sempre una mano fresca di 7 carte
+     (non una in meno ogni volta) — è solo quando si TIENE la mano finale che
+     si mettono in fondo al grimorio tante carte quanti mulligan sono stati
+     fatti (scelte dal giocatore, non a caso). Con la regola Commander
+     opzionale, il primo mulligan è gratuito e non conta ai fini del
+     "quante carte mettere in fondo". */
   let mulliganState = null;
 
   function openMulliganOverlay(){
-    mulliganState = { player:{count:0, kept:false}, claude:{count:0, kept:false} };
+    mulliganState = {
+      player:{count:0, kept:false, choosingBottom:false, picked:new Set()},
+      claude:{count:0, kept:false, choosingBottom:false, picked:new Set()}
+    };
     $('#game-home').style.display = 'none';
     renderMulliganHand('player');
     renderMulliganHand('claude');
@@ -1965,36 +1983,98 @@
     $('#mulligan-overlay').classList.add('show');
   }
 
+  function freeFirstMulliganEnabled(){
+    const el = $('#mulligan-free-first');
+    return el ? el.checked : true;
+  }
+
+  function bottomCardsOwed(side){
+    const st = mulliganState[side];
+    const free = freeFirstMulliganEnabled() && st.count > 0 ? 1 : 0;
+    return Math.max(0, st.count - free);
+  }
+
   function renderMulliganHand(side){
     const p = gameState[side];
     const st = mulliganState[side];
     const wrap = $(`#mulligan-hand-${side}`);
-    wrap.innerHTML = p.hand.map(c => `<div class="mulligan-card" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}" title="${escapeAttr(c.name)}"></div>`).join('');
+    const picker = $(`#mulligan-bottom-picker-${side}`);
+    const actions = $(`#mulligan-actions-${side}`);
     const statusEl = $(`#mulligan-status-${side}`);
+
+    if(st.choosingBottom){
+      const owed = bottomCardsOwed(side);
+      wrap.innerHTML = p.hand.map((c,i) => `
+        <div class="mulligan-card ${st.picked.has(i)?'picked':''}" data-idx="${i}"
+          style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}" title="${escapeAttr(c.name)}"></div>`).join('');
+      wrap.querySelectorAll('.mulligan-card').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const idx = parseInt(el.dataset.idx);
+          if(st.picked.has(idx)) st.picked.delete(idx);
+          else if(st.picked.size < owed) st.picked.add(idx);
+          renderMulliganHand(side);
+        });
+      });
+      statusEl.innerHTML = `<span class="mulligan-bottom-note">Scegli ${owed} carte da mettere in fondo al grimorio (${st.picked.size}/${owed} selezionate) — clicca sulle carte qui sopra.</span>`;
+      picker.style.display = 'block';
+      picker.innerHTML = `<button class="primary" ${st.picked.size===owed?'':'disabled'} id="btn-confirm-bottom-${side}">Metti in fondo e tieni la mano</button>`;
+      $(`#btn-confirm-bottom-${side}`).addEventListener('click', ()=> confirmBottomSelection(side));
+      actions.style.display = 'none';
+      return;
+    }
+
+    actions.style.display = 'flex';
+    picker.style.display = 'none';
+    wrap.innerHTML = p.hand.map(c => `<div class="mulligan-card" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}" title="${escapeAttr(c.name)}"></div>`).join('');
     if(st.kept){
-      statusEl.textContent = `Mano confermata — ${p.hand.length} carte.`;
+      const owed = bottomCardsOwed(side);
+      statusEl.textContent = `Mano confermata — ${p.hand.length} carte${owed?` (${owed} messe in fondo al grimorio)`:''}.`;
     }else if(st.count === 0){
       statusEl.textContent = 'Mano di apertura: 7 carte.';
     }else{
-      statusEl.textContent = `Mulligan ${st.count} — mano attuale: ${p.hand.length} carte.`;
+      const owed = bottomCardsOwed(side);
+      statusEl.textContent = `Mulligan ${st.count} — nuova mano da 7 carte. Tenendola, ne metterai ${owed} in fondo al grimorio.`;
     }
   }
 
   function doMulligan(side){
     const st = mulliganState[side];
-    if(st.kept) return;
+    if(st.kept || st.choosingBottom) return;
     const p = gameState[side];
     p.library.push(...p.hand);
     p.hand = [];
     shuffleArray(p.library);
     st.count++;
-    const newSize = Math.max(0, 7 - st.count);
-    p.hand = p.library.splice(0, newSize);
+    p.hand = p.library.splice(0, Math.min(7, p.library.length)); // regola London: sempre una mano fresca da 7
     renderMulliganHand(side);
   }
 
   function keepHand(side){
-    mulliganState[side].kept = true;
+    const st = mulliganState[side];
+    if(st.kept || st.choosingBottom) return;
+    const owed = bottomCardsOwed(side);
+    if(owed === 0){
+      st.kept = true;
+      renderMulliganHand(side);
+      updateMulliganContinueButton();
+      return;
+    }
+    st.choosingBottom = true;
+    st.picked = new Set();
+    renderMulliganHand(side);
+  }
+
+  function confirmBottomSelection(side){
+    const p = gameState[side];
+    const st = mulliganState[side];
+    const owed = bottomCardsOwed(side);
+    if(st.picked.size !== owed) return;
+    const idxs = Array.from(st.picked).sort((a,b)=>b-a); // dal più alto, per rimuovere senza sfalsare gli indici
+    const toBottom = [];
+    idxs.forEach(i=> toBottom.unshift(p.hand.splice(i,1)[0]));
+    p.library.push(...toBottom); // in fondo al grimorio, non rimescolate
+    st.choosingBottom = false;
+    st.kept = true;
     renderMulliganHand(side);
     updateMulliganContinueButton();
   }
@@ -2007,7 +2087,7 @@
   function confirmMulliganAndStart(){
     $('#mulligan-overlay').classList.remove('show');
     const mp = mulliganState.player.count, mc = mulliganState.claude.count;
-    logEvent(`Mani di apertura confermate${mp?` (tu: mulligan a ${7-mp})`:''}${mc?` (Claude: mulligan a ${7-mc})`:''}. La partita inizia.`);
+    logEvent(`Mani di apertura confermate${mp?` (tu: ${mp} mulligan, ${bottomCardsOwed('player')} carte in fondo)`:''}${mc?` (Claude: ${mc} mulligan, ${bottomCardsOwed('claude')} carte in fondo)`:''}. La partita inizia.`);
     mulliganState = null;
     resetTurnTimer('player', true);
     $('#game-board').style.display = 'block';
@@ -2138,24 +2218,28 @@
   }
 
   function renderPhaseBar(){
-    const wrap = $('#phase-bar');
-    if(!wrap || !gameState) return;
+    if(!gameState) return;
+    const containers = $$('.phase-bar');
+    if(containers.length === 0) return;
     const pills = TURN_PHASES.map((ph, i) => `<span class="phase-pill ${i===gameState.phaseIdx?'active':''}">${ph}</span>`).join('');
     const stackHtml = gameState.stack.length
       ? gameState.stack.map(s => `<span class="stack-item">${escapeHtml(s.name)}</span>`).join('')
       : `<span class="stack-item" style="opacity:.5;">pila vuota</span>`;
-    wrap.innerHTML = `
+    const html = `
       ${pills}
-      <button class="ghost" id="btn-advance-phase" style="margin-left:8px;">Fase successiva →</button>
+      <button class="ghost btn-advance-phase" style="margin-left:8px;">Fase successiva →</button>
       <div class="stack-panel">
         ${stackHtml}
-        <button class="ghost" id="btn-stack-add" title="Metti una carta/abilità in pila">+ Pila</button>
-        <button class="ghost" id="btn-stack-resolve" title="Risolvi la cima della pila">Risolvi cima</button>
+        <button class="ghost btn-stack-add" title="Metti una carta/abilità in pila">+ Pila</button>
+        <button class="ghost btn-stack-resolve" title="Risolvi la cima della pila">Risolvi cima</button>
       </div>
     `;
-    $('#btn-advance-phase').addEventListener('click', advancePhase);
-    $('#btn-stack-add').addEventListener('click', addToStack);
-    $('#btn-stack-resolve').addEventListener('click', resolveStackTop);
+    containers.forEach(wrap=>{
+      wrap.innerHTML = html;
+      wrap.querySelector('.btn-advance-phase').addEventListener('click', advancePhase);
+      wrap.querySelector('.btn-stack-add').addEventListener('click', addToStack);
+      wrap.querySelector('.btn-stack-resolve').addEventListener('click', resolveStackTop);
+    });
   }
 
   function endGame(){
@@ -2334,10 +2418,11 @@
         </div>
       </div>`;
 
-    // Campo di battaglia in alto a sinistra, le Terre (barra lunga) sotto di
-    // esso: la colonna sinistra del campo di gioco vero e proprio.
-    const fieldColLeft = `
-      <div class="field-col-left">
+    // Campo di battaglia e Terre, colonna sinistra. Per te il campo sta in
+    // alto (verso il centro/Claude) e le terre in fondo (verso la tua mano);
+    // per Claude è invertito, così anche il SUO campo di battaglia resta
+    // rivolto verso il centro/te, e le sue terre verso l'alto/lui.
+    const battlefieldBlock = `
         <div class="zone-block play-area-block">
           <div class="zone-title">
             Campo di battaglia <span class="zone-count">${p.battlefield.length}</span>
@@ -2345,11 +2430,15 @@
             ${p.attacking.length ? `<button class="icon-btn attack-declare-btn" data-act="clear-attack" style="font-size:11px;">annulla attacco (${p.attacking.length})</button>` : ''}
           </div>
           <div class="zone-cards play-area battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
-        </div>
+        </div>`;
+    const landsBlock = `
         <div class="zone-block play-area-block">
           <div class="zone-title">Terre <span class="zone-count">${p.lands.length}</span></div>
           <div class="zone-cards play-area lands-bar ${p.lands.length?'':'empty-zone'}" data-dropzone="lands">${landsHtml}</div>
-        </div>
+        </div>`;
+    const fieldColLeft = `
+      <div class="field-col-left">
+        ${side === 'claude' ? (landsBlock + battlefieldBlock) : (battlefieldBlock + landsBlock)}
       </div>`;
 
     // Grimorio (+ Comandante a fianco) in alto a destra, Cimitero ed Esilio
@@ -2420,6 +2509,7 @@
       <div id="phase-bar" class="phase-bar"></div>
       ${playerPanelHtml('claude')}
       ${playerPanelHtml('player')}
+      <div id="phase-bar-bottom" class="phase-bar"></div>
       <div class="game-log-panel">
         <div class="zone-title">Cronologia partita</div>
         <div id="game-log-list" class="game-log-list"></div>
