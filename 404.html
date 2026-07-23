@@ -957,6 +957,7 @@
         <button class="view-btn active" data-group="none">Nessuno</button>
         <button class="view-btn" data-group="set">▤ Espansione</button>
         <button class="view-btn" data-group="type">◈ Tipo</button>
+        <button class="view-btn" data-group="color">🎨 Colore</button>
         <button class="view-btn" data-group="price">€ Prezzo</button>
       </div>
     </div>
@@ -1366,6 +1367,48 @@
     incantesimo:  {label:"Incantesimo"},
     altro:        {label:"Altro"}
   };
+
+  const COLOR_META = {
+    W: {label:"Bianco", color:"#f8f6d8"},
+    U: {label:"Blu", color:"#0e68ab"},
+    B: {label:"Nero", color:"#3a3a3a"},
+    R: {label:"Rosso", color:"#d3202a"},
+    G: {label:"Verde", color:"#00733e"},
+    colorless: {label:"Incolore", color:"#9e9e9e"}
+  };
+
+  // Le coppie di due colori, appaiate per "colori simili" seguendo la ruota
+  // cromatica di Magic (ogni gilda è adiacente alle successive), invece di
+  // un ordine alfabetico casuale. La chiave è alfabetica (es. "BU" per Blu-Nero)
+  // perché è così che vengono normalizzati i colori della carta prima del confronto.
+  const COLOR_PAIR_ORDER = ['UW','BU','BR','GR','GW','BW','RU','BG','RW','GU'];
+  const COLOR_PAIR_NAMES = {
+    UW:'Azorius — Bianco-Blu', BU:'Dimir — Blu-Nero', BR:'Rakdos — Nero-Rosso',
+    GR:'Gruul — Rosso-Verde', GW:'Selesnya — Verde-Bianco', BW:'Orzhov — Bianco-Nero',
+    RU:'Izzet — Blu-Rosso', BG:'Golgari — Nero-Verde', RW:'Boros — Rosso-Bianco', GU:'Simic — Verde-Blu'
+  };
+
+  function colorGroupKey(c){
+    const cols = Array.isArray(c.colors) ? c.colors : [];
+    if(cols.length === 0) return 'colorless';
+    if(cols.length === 1) return cols[0];
+    if(cols.length === 2) return 'multi:' + [...cols].sort().join('');
+    return 'multi:' + cols.length; // 3, 4 o 5 colori: raggruppate insieme per non frammentare troppo
+  }
+
+  function colorGroupLabel(key){
+    if(key === 'colorless') return COLOR_META.colorless.label;
+    if(COLOR_META[key]) return COLOR_META[key].label;
+    if(key === 'multi:3') return 'Multicolore (3 colori)';
+    if(key === 'multi:4') return 'Multicolore (4 colori)';
+    if(key === 'multi:5') return 'Multicolore (5 colori — WUBRG)';
+    const pairKey = key.replace('multi:','');
+    return 'Multicolore — ' + (COLOR_PAIR_NAMES[pairKey] || pairKey);
+  }
+
+  const COLOR_GROUP_ORDER = ['W','U','B','R','G',
+    ...COLOR_PAIR_ORDER.map(p=>'multi:'+p),
+    'multi:3','multi:4','multi:5','colorless'];
 
   // Ordine di priorità per dedurre il tipo principale dalla type_line di Scryfall
   // (una carta può avere più supertipi, es. "Artifact Creature")
@@ -2489,6 +2532,7 @@
     if(!cards[idx].nameIt && extra.nameIt) cards[idx].nameIt = extra.nameIt;
     if(!cards[idx].imageUrlBack && extra.imageUrlBack) cards[idx].imageUrlBack = extra.imageUrlBack;
     if(!cards[idx].nameBack && extra.nameBack) cards[idx].nameBack = extra.nameBack;
+    if(!cards[idx].colors && extra.colors) cards[idx].colors = extra.colors;
   }
 
 
@@ -2706,6 +2750,8 @@
       main.innerHTML = groupedGeneric(list, c => c.setName || 'Senza espansione', k => k, null);
     }else if(groupMode === 'type'){
       main.innerHTML = groupedGeneric(list, c => c.type || 'altro', k => (TYPE_META[k]||TYPE_META.altro).label, Object.keys(TYPE_META));
+    }else if(groupMode === 'color'){
+      main.innerHTML = groupedGeneric(list, colorGroupKey, colorGroupLabel, COLOR_GROUP_ORDER);
     }else if(groupMode === 'price'){
       main.innerHTML = groupedGeneric(list, priceBucketOf, k => (PRICE_BUCKET_META[k]||PRICE_BUCKET_META.unknown).label, PRICE_BUCKET_ORDER);
     }else{
@@ -3465,6 +3511,16 @@
       imgBack = (back.image_uris && back.image_uris.normal) || '';
       nameBack = back.name || '';
     }
+    // Il colore: di norma è sull'oggetto principale, ma le carte a due facce
+    // lo indicano solo per singola faccia — in quel caso uniamo i colori di
+    // entrambe le facce per ottenere il colore complessivo della carta.
+    let colors = Array.isArray(sc.colors) ? sc.colors : null;
+    if(!colors && sc.card_faces){
+      const set = new Set();
+      sc.card_faces.forEach(f=> (f.colors||[]).forEach(cc=> set.add(cc)));
+      colors = Array.from(set);
+    }
+    if(!colors) colors = [];
     let rarity = sc.rarity;
     if(!RARITY_META[rarity]) rarity = 'common';
     const typeLine = sc.type_line || (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].type_line) || '';
@@ -3477,6 +3533,7 @@
       imageUrl: img,
       imageUrlBack: imgBack,
       nameBack: nameBack,
+      colors: colors,
       scryfallId: sc.id,
       scryfallUri: sc.scryfall_uri || '',
       language: scryfallLangToField(sc.lang),
@@ -4191,6 +4248,15 @@
         c.imageUrlBack = back.image_uris.normal;
         c.nameBack = back.name || '';
       }
+    }
+    if(!c.colors){
+      let colors = Array.isArray(sc.colors) ? sc.colors : null;
+      if(!colors && sc.card_faces){
+        const set = new Set();
+        sc.card_faces.forEach(f=> (f.colors||[]).forEach(cc=> set.add(cc)));
+        colors = Array.from(set);
+      }
+      c.colors = colors || [];
     }
     if(!c.setName && sc.set_name) c.setName = sc.set_name;
     if(!c.setCode && sc.set) c.setCode = sc.set.toUpperCase();
