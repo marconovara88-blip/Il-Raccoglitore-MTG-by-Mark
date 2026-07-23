@@ -93,8 +93,9 @@
     color:var(--text-dim);
     font-size:13px;
   }
+  .sync-row{display:flex; align-items:center; gap:8px; margin-top:8px;}
   .sync-status{
-    margin-top:8px;
+    margin-top:0;
     font-size:11px;
     font-family:var(--font-mono);
     display:inline-flex;
@@ -105,6 +106,7 @@
     border:1px solid var(--border);
     color:var(--text-faint);
   }
+  .sync-row .icon-btn{font-size:12px; padding:2px 6px;}
   .sync-status.ok{color:#8fd3a8; border-color:#3a5540;}
   .sync-status.saving{color:var(--accent); border-color:var(--accent-dim);}
   .sync-status.error{color:#e0958c; border-color:#6b3a34;}
@@ -898,7 +900,10 @@
   <div class="title-block">
     <h1><span class="gem"></span>Il Raccoglitore</h1>
     <p>Catalogo della collezione — Magic: The Gathering</p>
-    <div id="sync-status" class="sync-status ok">☁ Tutto salvato</div>
+    <div class="sync-row">
+      <div id="sync-status" class="sync-status ok">☁ Tutto salvato</div>
+      <button id="btn-reload-app" class="icon-btn" title="Ricarica l'app">🔄</button>
+    </div>
   </div>
   <div class="stats">
     <div class="stat"><span id="stat-total" class="num">0</span><span class="lbl">Carte totali</span></div>
@@ -1346,6 +1351,7 @@
       db = firebase.firestore();
       useFirebase = true;
     }catch(e){
+      console.error('Errore inizializzazione Firebase:', e);
       useFirebase = false;
     }
   }
@@ -4486,6 +4492,7 @@
 
   /* ---------------- Wire up events ---------------- */
   $('#btn-add-card').addEventListener('click', openAddModal);
+  $('#btn-reload-app').addEventListener('click', ()=> window.location.reload());
 
   function openGameSection(){
     $('#toolbar').style.display = 'none';
