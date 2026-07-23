@@ -666,6 +666,53 @@
     padding:12px 14px; margin-bottom:16px;
   }
   .game-log-list{max-height:160px; overflow-y:auto; display:flex; flex-direction:column-reverse; gap:3px;}
+
+  /* Mani di apertura / mulligan */
+  .mulligan-columns{display:flex; gap:24px; flex-wrap:wrap;}
+  .mulligan-col{flex:1; min-width:280px;}
+  .mulligan-col h3{font-family:var(--font-display); color:var(--accent); font-size:15px; margin:0 0 10px;}
+  .mulligan-hand{display:flex; flex-wrap:wrap; gap:10px; min-height:150px; margin-bottom:8px;}
+  .mulligan-card{
+    width:100px; height:140px; border-radius:7px; background:var(--bg-elevated) center/cover no-repeat;
+    border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.4);
+    animation: cardEnter .28s ease;
+  }
+  .mulligan-status{font-size:12px; color:var(--text-dim); min-height:18px;}
+
+  /* Ricerca nel grimorio */
+  .lib-search-card{
+    position:relative; aspect-ratio:5/7; border-radius:5px; background:var(--bg-elevated) center/cover no-repeat;
+    border:1px solid var(--border); cursor:pointer;
+  }
+  .lib-search-card .card-mini-actions{
+    position:absolute; bottom:-2px; left:-2px; right:-2px;
+    display:flex; gap:2px; opacity:0; transition:opacity .12s ease;
+  }
+  .lib-search-card:hover .card-mini-actions{opacity:1;}
+  .lib-search-card .card-mini-actions button{
+    flex:1; font-size:9px; padding:3px 0; border-radius:3px;
+    background:rgba(20,16,12,0.92); border:1px solid var(--border); color:var(--text);
+  }
+
+  /* Fasi di turno e pila */
+  .phase-bar{
+    display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+    background:var(--bg-elevated); border:1px solid var(--border);
+    border-radius:8px; padding:10px 16px; margin-bottom:16px;
+  }
+  .phase-pill{
+    font-size:10.5px; padding:4px 9px; border-radius:12px; border:1px solid var(--border);
+    color:var(--text-faint); white-space:nowrap;
+  }
+  .phase-pill.active{background:var(--accent); color:#1c1712; border-color:var(--accent); font-weight:700;}
+  .stack-panel{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto;
+    padding-left:12px; border-left:1px solid var(--border-soft);
+  }
+  .stack-item{
+    font-size:11px; background:rgba(0,0,0,0.25); border:1px solid var(--border);
+    border-radius:4px; padding:3px 8px; color:var(--text-dim);
+  }
   .log-row{font-size:11.5px; color:var(--text-dim); line-height:1.5; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:2px;}
 
   /* Costruzione mazzo dalla collezione (setup partita) */
@@ -975,6 +1022,46 @@
   <!-- Tavolo di gioco -->
   <div id="game-board" style="display:none;"></div>
 </section>
+
+<div class="overlay" id="mulligan-overlay">
+  <div class="modal" style="max-width:920px;">
+    <h2>Mani di apertura</h2>
+    <p class="bulk-help">Controlla la mano: tieni queste carte oppure chiedi un mulligan (si rimescola e se ne pescano di nuove, una in meno ad ogni mulligan). Quando entrambi avete confermato, la partita comincia.</p>
+    <div class="mulligan-columns">
+      <div class="mulligan-col">
+        <h3>🤖 Claude</h3>
+        <div class="mulligan-hand" id="mulligan-hand-claude"></div>
+        <p class="mulligan-status" id="mulligan-status-claude"></p>
+        <div class="modal-actions">
+          <div class="left"><button class="ghost" data-side="claude" data-act="mull">Mulligan</button></div>
+          <div class="left"><button class="primary" data-side="claude" data-act="keep">Tieni mano</button></div>
+        </div>
+      </div>
+      <div class="mulligan-col">
+        <h3>🙂 Tu</h3>
+        <div class="mulligan-hand" id="mulligan-hand-player"></div>
+        <p class="mulligan-status" id="mulligan-status-player"></p>
+        <div class="modal-actions">
+          <div class="left"><button class="ghost" data-side="player" data-act="mull">Mulligan</button></div>
+          <div class="left"><button class="primary" data-side="player" data-act="keep">Tieni mano</button></div>
+        </div>
+      </div>
+    </div>
+    <button class="primary" id="btn-mulligan-continue" style="display:none; margin-top:18px; width:100%;">Inizia la partita →</button>
+  </div>
+</div>
+
+<div class="overlay" id="library-search-overlay">
+  <div class="modal" style="max-width:900px;">
+    <h2>🔍 Passa in rassegna il grimorio</h2>
+    <p class="bulk-help">Scegli una carta: passa il mouse (o tieni premuto) per scegliere se portarla in mano o giocarla direttamente in campo. Il resto del grimorio verrà rimescolato automaticamente.</p>
+    <div id="library-search-grid" class="scan-review-grid" style="grid-template-columns:repeat(auto-fill, minmax(90px, 1fr));"></div>
+    <div class="modal-actions">
+      <div></div>
+      <div class="left"><button class="ghost" id="btn-library-search-cancel">Chiudi senza scegliere</button></div>
+    </div>
+  </div>
+</div>
 
 <section id="scan-review-section" style="display:none; padding:24px 32px;">
   <button class="ghost" id="btn-back-from-scanreview" style="margin-bottom:18px;">← Torna al raccoglitore</button>
@@ -1393,6 +1480,8 @@
   function openGameHome(){
     $('#deck-editor').style.display = 'none';
     $('#game-board').style.display = 'none';
+    $('#mulligan-overlay').classList.remove('show');
+    $('#library-search-overlay').classList.remove('show');
     $('#game-home').style.display = 'block';
     renderSavedDecksGrid();
     populateGameDeckSelects();
@@ -1738,18 +1827,173 @@
       gameState = {
         player: makePlayerState('Tu', playerData, startLife),
         claude: makePlayerState('Claude', claudeData, startLife),
-        log: []
+        log: [], phaseIdx: 0, stack: []
       };
-      logEvent('La partita inizia. Mani di apertura pescate.');
-      resetTurnTimer('player', true);
-      $('#game-home').style.display = 'none';
-      $('#game-board').style.display = 'block';
       setGameSetupStatus('', false);
-      renderGame();
-      toast('Mani di apertura pescate. Buona partita!');
+      openMulliganOverlay();
     }catch(e){
       setGameSetupStatus('Errore nella preparazione della partita: ' + (e && e.message ? e.message : e), true);
     }
+  }
+
+  /* ---------------- Mani di apertura / mulligan ---------------- */
+  let mulliganState = null;
+
+  function openMulliganOverlay(){
+    mulliganState = { player:{count:0, kept:false}, claude:{count:0, kept:false} };
+    $('#game-home').style.display = 'none';
+    renderMulliganHand('player');
+    renderMulliganHand('claude');
+    updateMulliganContinueButton();
+    $('#mulligan-overlay').classList.add('show');
+  }
+
+  function renderMulliganHand(side){
+    const p = gameState[side];
+    const st = mulliganState[side];
+    const wrap = $(`#mulligan-hand-${side}`);
+    wrap.innerHTML = p.hand.map(c => `<div class="mulligan-card" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}" title="${escapeAttr(c.name)}"></div>`).join('');
+    const statusEl = $(`#mulligan-status-${side}`);
+    if(st.kept){
+      statusEl.textContent = `Mano confermata — ${p.hand.length} carte.`;
+    }else if(st.count === 0){
+      statusEl.textContent = 'Mano di apertura: 7 carte.';
+    }else{
+      statusEl.textContent = `Mulligan ${st.count} — mano attuale: ${p.hand.length} carte.`;
+    }
+  }
+
+  function doMulligan(side){
+    const st = mulliganState[side];
+    if(st.kept) return;
+    const p = gameState[side];
+    p.library.push(...p.hand);
+    p.hand = [];
+    shuffleArray(p.library);
+    st.count++;
+    const newSize = Math.max(0, 7 - st.count);
+    p.hand = p.library.splice(0, newSize);
+    renderMulliganHand(side);
+  }
+
+  function keepHand(side){
+    mulliganState[side].kept = true;
+    renderMulliganHand(side);
+    updateMulliganContinueButton();
+  }
+
+  function updateMulliganContinueButton(){
+    const ready = mulliganState.player.kept && mulliganState.claude.kept;
+    $('#btn-mulligan-continue').style.display = ready ? 'block' : 'none';
+  }
+
+  function confirmMulliganAndStart(){
+    $('#mulligan-overlay').classList.remove('show');
+    const mp = mulliganState.player.count, mc = mulliganState.claude.count;
+    logEvent(`Mani di apertura confermate${mp?` (tu: mulligan a ${7-mp})`:''}${mc?` (Claude: mulligan a ${7-mc})`:''}. La partita inizia.`);
+    mulliganState = null;
+    resetTurnTimer('player', true);
+    $('#game-board').style.display = 'block';
+    renderGame();
+    toast('Buona partita!');
+  }
+
+  /* ---------------- Passare in rassegna il grimorio ---------------- */
+  let librarySearchSide = null;
+
+  function openLibrarySearch(side){
+    librarySearchSide = side;
+    renderLibrarySearchGrid();
+    $('#library-search-overlay').classList.add('show');
+  }
+
+  function renderLibrarySearchGrid(){
+    const p = gameState[librarySearchSide];
+    const grid = $('#library-search-grid');
+    if(p.library.length === 0){
+      grid.innerHTML = `<div class="deck-link-empty">Il grimorio è vuoto.</div>`;
+      return;
+    }
+    grid.innerHTML = p.library.map(c => `
+      <div class="lib-search-card" data-uid="${c.uid}" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}" title="${escapeAttr(c.name)}">
+        <div class="card-mini-actions">
+          <button data-dest="hand" title="Porta in mano">✋</button>
+          <button data-dest="battlefield" title="Gioca in campo">▶</button>
+        </div>
+      </div>`).join('');
+    grid.querySelectorAll('.lib-search-card').forEach(el=>{
+      const cuid = el.dataset.uid;
+      el.querySelectorAll('button[data-dest]').forEach(btn=>{
+        btn.addEventListener('click', (e)=>{
+          e.stopPropagation();
+          pickFromLibrarySearch(cuid, btn.dataset.dest);
+        });
+      });
+    });
+  }
+
+  function pickFromLibrarySearch(cuid, dest){
+    const p = gameState[librarySearchSide];
+    const idx = p.library.findIndex(c => c.uid === cuid);
+    if(idx < 0) return;
+    const [card] = p.library.splice(idx, 1);
+    p[dest].push(card);
+    shuffleArray(p.library);
+    logEvent(`${p.name} passa in rassegna il grimorio: prende ${card.name} (→ ${ZONE_LABELS[dest]}) e rimescola.`);
+    $('#library-search-overlay').classList.remove('show');
+    renderGame();
+  }
+
+  /* ---------------- Fasi di turno e pila ---------------- */
+  const TURN_PHASES = ['Untap','Upkeep','Pesca','1ª Main Phase','Combattimento','2ª Main Phase','Fine turno'];
+
+  function advancePhase(){
+    if(!gameState) return;
+    gameState.phaseIdx++;
+    if(gameState.phaseIdx >= TURN_PHASES.length){
+      gameState.phaseIdx = 0;
+      passTurnTimer();
+      logEvent(`— Nuovo turno: ${gameState[turnTimer.activeSide].name}, fase Untap. —`);
+    }else{
+      logEvent(`Fase: ${TURN_PHASES[gameState.phaseIdx]}.`);
+    }
+    renderPhaseBar();
+  }
+
+  function addToStack(){
+    const name = window.prompt('Nome della carta/abilità da mettere in pila:', '');
+    if(!name || !name.trim()) return;
+    gameState.stack.push({ id: uid(), name: name.trim(), side: turnTimer.activeSide });
+    logEvent(`${gameState[turnTimer.activeSide].name} mette in pila: ${name.trim()}.`);
+    renderPhaseBar();
+  }
+
+  function resolveStackTop(){
+    const item = gameState.stack.pop();
+    if(!item) return;
+    logEvent(`Si risolve dalla pila: ${item.name}.`);
+    renderPhaseBar();
+  }
+
+  function renderPhaseBar(){
+    const wrap = $('#phase-bar');
+    if(!wrap || !gameState) return;
+    const pills = TURN_PHASES.map((ph, i) => `<span class="phase-pill ${i===gameState.phaseIdx?'active':''}">${ph}</span>`).join('');
+    const stackHtml = gameState.stack.length
+      ? gameState.stack.map(s => `<span class="stack-item">${escapeHtml(s.name)}</span>`).join('')
+      : `<span class="stack-item" style="opacity:.5;">pila vuota</span>`;
+    wrap.innerHTML = `
+      ${pills}
+      <button class="ghost" id="btn-advance-phase" style="margin-left:8px;">Fase successiva →</button>
+      <div class="stack-panel">
+        ${stackHtml}
+        <button class="ghost" id="btn-stack-add" title="Metti una carta/abilità in pila">+ Pila</button>
+        <button class="ghost" id="btn-stack-resolve" title="Risolvi la cima della pila">Risolvi cima</button>
+      </div>
+    `;
+    $('#btn-advance-phase').addEventListener('click', advancePhase);
+    $('#btn-stack-add').addEventListener('click', addToStack);
+    $('#btn-stack-resolve').addEventListener('click', resolveStackTop);
   }
 
   function endGame(){
@@ -1900,8 +2144,8 @@
     const gyHtml = p.graveyard.map(c=>gameCardHtml(side,'graveyard',c)).join('');
     const exHtml = p.exile.map(c=>gameCardHtml(side,'exile',c)).join('');
     const cmdHtml = p.command.map(c=>gameCardHtml(side,'command',c)).join('');
-    return `
-    <div class="player-panel" data-side="${side}">
+
+    const headerRow = `
       <div class="player-panel-header">
         <h3>${side === 'claude' ? '🤖' : '🙂'} ${escapeHtml(p.name)}</h3>
         <div class="counters-row">
@@ -1914,7 +2158,9 @@
           ${counterControl(side,'energy','⚡','Energia')}
           ${counterControl(side,'experience','★','Esperienza')}
         </div>
-      </div>
+      </div>`;
+
+    const miscRow = `
       <div class="zone-row">
         <div class="zone-block" style="flex:0 0 auto;">
           <div class="zone-title">Grimorio</div>
@@ -1922,6 +2168,7 @@
             <span class="num">${p.library.length}</span>
             <span class="lbl">pesca</span>
           </div>
+          <button class="icon-btn" data-act="search-library" style="margin-top:4px; font-size:10px; width:100%;">🔍 Cerca</button>
         </div>
         <div class="zone-block" style="flex:0 0 auto;">
           <div class="zone-title">
@@ -1930,11 +2177,17 @@
           </div>
           <div class="zone-cards ${p.command.length?'':'empty-zone'}" data-dropzone="command" style="min-width:60px;">${cmdHtml}</div>
         </div>
-        <div class="zone-block">
-          <div class="zone-title">Mano <span class="zone-count">${p.hand.length}</span></div>
-          <div class="zone-cards ${p.hand.length?'':'empty-zone'}" data-dropzone="hand">${handHtml}</div>
+        <div class="zone-block play-area-block">
+          <div class="zone-title">Cimitero <span class="zone-count">${p.graveyard.length}</span></div>
+          <div class="zone-cards play-area graveyard-zone ${p.graveyard.length?'':'empty-zone'}" data-dropzone="graveyard">${gyHtml}</div>
         </div>
-      </div>
+        <div class="zone-block play-area-block">
+          <div class="zone-title">Esilio <span class="zone-count">${p.exile.length}</span></div>
+          <div class="zone-cards play-area exile-zone ${p.exile.length?'':'empty-zone'}" data-dropzone="exile">${exHtml}</div>
+        </div>
+      </div>`;
+
+    const fieldRow = `
       <div class="zone-row">
         <div class="zone-block play-area-block" style="flex:0 0 auto;">
           <div class="zone-title">Terreni <span class="zone-count">${p.lands.length}</span></div>
@@ -1948,18 +2201,24 @@
           </div>
           <div class="zone-cards play-area battlefield-zone ${p.battlefield.length?'':'empty-zone'}" data-dropzone="battlefield">${bfHtml}</div>
         </div>
-      </div>
+      </div>`;
+
+    const handRow = `
       <div class="zone-row">
-        <div class="zone-block play-area-block">
-          <div class="zone-title">Cimitero <span class="zone-count">${p.graveyard.length}</span></div>
-          <div class="zone-cards play-area graveyard-zone ${p.graveyard.length?'':'empty-zone'}" data-dropzone="graveyard">${gyHtml}</div>
+        <div class="zone-block">
+          <div class="zone-title">Mano <span class="zone-count">${p.hand.length}</span></div>
+          <div class="zone-cards ${p.hand.length?'':'empty-zone'}" data-dropzone="hand">${handHtml}</div>
         </div>
-        <div class="zone-block play-area-block">
-          <div class="zone-title">Esilio <span class="zone-count">${p.exile.length}</span></div>
-          <div class="zone-cards play-area exile-zone ${p.exile.length?'':'empty-zone'}" data-dropzone="exile">${exHtml}</div>
-        </div>
-      </div>
-    </div>`;
+      </div>`;
+
+    // Il lato di Claude tiene la mano in alto e il campo in basso; il tuo
+    // lato fa l'opposto: così i due campi di battaglia si toccano al centro
+    // del tavolo, come su un tavolo fisico vero.
+    const bodyOrder = side === 'claude'
+      ? headerRow + handRow + miscRow + fieldRow
+      : headerRow + fieldRow + miscRow + handRow;
+
+    return `<div class="player-panel" data-side="${side}">${bodyOrder}</div>`;
   }
 
   function renderGame(){
@@ -1968,6 +2227,7 @@
     const board = $('#game-board');
     board.innerHTML = `
       <div id="turn-timer" class="turn-timer-bar"></div>
+      <div id="phase-bar" class="phase-bar"></div>
       ${playerPanelHtml('claude')}
       ${playerPanelHtml('player')}
       <div class="game-log-panel">
@@ -1977,6 +2237,7 @@
       <button class="ghost" id="btn-end-game">Termina partita</button>
     `;
     renderTimerDisplay();
+    renderPhaseBar();
     renderLogOnly();
     board.querySelectorAll('.player-panel').forEach(panel=>{
       const side = panel.dataset.side;
@@ -1997,6 +2258,7 @@
         renderGame();
       }));
       panel.querySelectorAll('[data-act="add-token"]').forEach(b=> b.addEventListener('click', ()=> openTokenPrompt(side)));
+      panel.querySelectorAll('[data-act="search-library"]').forEach(b=> b.addEventListener('click', ()=> openLibrarySearch(side)));
       panel.querySelectorAll('[data-act="clear-attack"]').forEach(b=> b.addEventListener('click', ()=>{
         gameState[side].attacking = [];
         renderGame();
@@ -2176,13 +2438,15 @@
   /* Una carta è considerata "la stessa" solo se coincidono nome, espansione
      (codice set) e stato foil. Copie della stessa carta ma di un'altra
      espansione, o foil contro non-foil, restano voci separate. */
-  function findDuplicateIndex(name, setCode, foil){
+  function findDuplicateIndex(name, setCode, foil, language){
     const n = (name||'').trim().toLowerCase();
     const s = (setCode||'').trim().toUpperCase();
+    const l = (language||'').trim().toUpperCase();
     return cards.findIndex(c=>
       (c.name||'').trim().toLowerCase() === n &&
       (c.setCode||'').trim().toUpperCase() === s &&
-      !!c.foil === !!foil
+      !!c.foil === !!foil &&
+      (c.language||'').trim().toUpperCase() === l
     );
   }
 
@@ -3038,7 +3302,7 @@
       toast('Salvato nel raccoglitore.');
       return;
     }
-    const dupIdx = findDuplicateIndex(data.name, data.setCode, data.foil);
+    const dupIdx = findDuplicateIndex(data.name, data.setCode, data.foil, data.language);
     if(dupIdx >= 0){
       mergeQuantityIntoExisting(dupIdx, data.quantity, data);
       scheduleSave(); render(); closeModal();
@@ -3105,6 +3369,15 @@
     }catch(e){ return ''; }
   }
 
+  /* Converte il codice lingua di Scryfall (es. 'it','en','ja','de') nello
+     stesso schema usato dal menu a tendina del modulo, così le stampe non
+     inglesi vengono etichettate automaticamente e mai confuse/accorpate
+     con quelle inglesi durante il controllo dei duplicati. */
+  function scryfallLangToField(lang){
+    const map = { it:'IT', ja:'JP', de:'DE' };
+    return map[lang] || ''; // 'en' e lingue non mappate restano vuote (comportamento di sempre)
+  }
+
   function scryfallToCardPatch(sc){
     const img = (sc.image_uris && sc.image_uris.normal) ||
                 (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
@@ -3120,6 +3393,7 @@
       imageUrl: img,
       scryfallId: sc.id,
       scryfallUri: sc.scryfall_uri || '',
+      language: scryfallLangToField(sc.lang),
       priceEur: sc.prices && sc.prices.eur ? parseFloat(sc.prices.eur) : null,
       priceFoilEur: sc.prices && sc.prices.eur_foil ? parseFloat(sc.prices.eur_foil) : null,
       priceUpdated: new Date().toISOString()
@@ -3173,7 +3447,7 @@
     const patch = scryfallToCardPatch(sc);
     patch.nameIt = (sc.lang === 'it' && sc.printed_name) ? sc.printed_name : '';
     foil = !!foil;
-    const dupIdx = findDuplicateIndex(patch.name, patch.setCode, foil);
+    const dupIdx = findDuplicateIndex(patch.name, patch.setCode, foil, patch.language);
     let targetCard;
     if(dupIdx >= 0){
       mergeQuantityIntoExisting(dupIdx, qty||1, patch);
@@ -3647,7 +3921,7 @@
         ok++;
       }catch(e){
         fail++;
-        const dupIdx = findDuplicateIndex(parsed.name, parsed.setCode, parsed.foil);
+        const dupIdx = findDuplicateIndex(parsed.name, parsed.setCode, parsed.foil, '');
         if(dupIdx >= 0){
           mergeQuantityIntoExisting(dupIdx, parsed.qty, {});
         }else{
@@ -3938,6 +4212,18 @@
   $('#btn-open-game').addEventListener('click', openGameSection);
   $('#btn-back-from-game').addEventListener('click', closeGameSection);
   $('#btn-start-game').addEventListener('click', startGame);
+
+  $('#mulligan-overlay').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-side][data-act]');
+    if(!btn) return;
+    const side = btn.dataset.side, act = btn.dataset.act;
+    if(act === 'mull') doMulligan(side);
+    else if(act === 'keep') keepHand(side);
+  });
+  $('#btn-mulligan-continue').addEventListener('click', confirmMulliganAndStart);
+  $('#btn-library-search-cancel').addEventListener('click', ()=>{
+    $('#library-search-overlay').classList.remove('show');
+  });
 
   $('#btn-new-deck').addEventListener('click', ()=> openDeckEditor(null));
   $('#btn-back-from-editor').addEventListener('click', closeDeckEditor);
