@@ -310,6 +310,21 @@
     flex-shrink:0;
     text-decoration:none;
   }
+  .thumb-wrap, .tile-thumb-wrap{position:relative; flex-shrink:0;}
+  .tile-thumb-wrap{width:100%;}
+  .flip-btn{
+    position:absolute; bottom:-3px; right:-3px; width:18px; height:18px;
+    border-radius:50%; padding:0; font-size:10px; line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--bg-elevated); border:1px solid var(--accent-dim); color:var(--accent);
+    cursor:pointer; z-index:2;
+  }
+  .flip-btn:hover{background:var(--accent); color:#1c1712;}
+  .game-card-flip{
+    position:absolute; top:-3px; right:-3px; bottom:auto;
+    opacity:0; transition:opacity .12s ease;
+  }
+  .game-card:hover .game-card-flip{opacity:1;}
   .card-name{font-weight:600; cursor:default;}
   .card-name .foil-tag{
     font-size:9px; color:var(--accent); border:1px solid var(--accent-dim);
@@ -838,7 +853,8 @@
     }
     .list-row.header-row{display:none;}
     .list-row .rarity-bar{order:0; width:5px; align-self:stretch; height:auto; border-radius:3px;}
-    .list-row .thumb{order:1; width:50px; height:69px;}
+    .list-row .thumb-wrap{order:1; width:50px; height:69px;}
+    .list-row .thumb{width:50px; height:69px;}
     .list-row .card-name{order:2; flex:1 1 auto; font-size:15px;}
     .list-row .set-cell{
       order:3; flex-basis:100%;
@@ -1563,7 +1579,7 @@
     list.innerHTML = note + shown.map(c => {
       const m = TYPE_META[c.type] || TYPE_META.altro;
       const checked = sel.has(c.name.toLowerCase());
-      return `<div class="ac-row ${checked?'checked':''}" data-name="${escapeAttr(c.name)}" data-img="${escapeAttr(c.imageUrl||'')}">
+      return `<div class="ac-row ${checked?'checked':''}" data-name="${escapeAttr(c.name)}" data-img="${escapeAttr(c.imageUrl||'')}" data-imgback="${escapeAttr(c.imageUrlBack||'')}">
         <input type="checkbox" ${checked?'checked':''}>
         <div class="ac-row-thumb" style="${c.imageUrl?`background-image:url('${escapeAttr(c.imageUrl)}')`:''}"></div>
         <span class="ac-row-name">${escapeHtml(c.name)}</span>
@@ -1572,10 +1588,10 @@
     }).join('');
     list.querySelectorAll('.ac-row[data-name]').forEach(row=>{
       row.addEventListener('click', (e)=>{
-        const name = row.dataset.name, img = row.dataset.img;
+        const name = row.dataset.name, img = row.dataset.img, imgBack = row.dataset.imgback;
         const key = name.toLowerCase();
         if(sel.has(key)){ sel.delete(key); row.classList.remove('checked'); row.querySelector('input').checked = false; }
-        else{ sel.set(key, {name, imageUrl:img}); row.classList.add('checked'); row.querySelector('input').checked = true; }
+        else{ sel.set(key, {name, imageUrl:img, imageUrlBack:imgBack}); row.classList.add('checked'); row.querySelector('input').checked = true; }
         updateSelectedCount(prefix);
       });
     });
@@ -1594,18 +1610,18 @@
     const sel = collectionSelected[prefix];
     if(sel.size === 0) return;
     const count = sel.size;
-    sel.forEach(({name, imageUrl}) => addCardToDeckPick(prefix, name, imageUrl));
+    sel.forEach(({name, imageUrl, imageUrlBack}) => addCardToDeckPick(prefix, name, imageUrl, imageUrlBack));
     sel.clear();
     updateSelectedCount(prefix);
     renderCollectionSuggestions(prefix, $(`#${prefix}-collection-search`).value);
     toast(`Aggiunte ${count} carte al mazzo.`);
   }
 
-  function addCardToDeckPick(prefix, name, imageUrl){
+  function addCardToDeckPick(prefix, name, imageUrl, imageUrlBack){
     const picks = deckEditorPicks[prefix];
     const existing = picks.find(p => p.name.toLowerCase() === name.toLowerCase());
     if(existing){ existing.qty++; }
-    else{ picks.push({ name, imageUrl: imageUrl||'', qty: 1, isCommander: false }); }
+    else{ picks.push({ name, imageUrl: imageUrl||'', imageUrlBack: imageUrlBack||'', qty: 1, isCommander: false }); }
     renderDeckPicks(prefix);
   }
 
@@ -1697,7 +1713,7 @@
       names.forEach(n=>{
         const local = localByName[n.toLowerCase()];
         if(local){
-          addCardToDeckPick('editor', local.name, local.imageUrl || '');
+          addCardToDeckPick('editor', local.name, local.imageUrl || '', local.imageUrlBack || '');
           fromCollection++;
           return;
         }
@@ -1705,7 +1721,8 @@
         if(sc){
           const img = (sc.image_uris && sc.image_uris.small) ||
             (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.small) || '';
-          addCardToDeckPick('editor', sc.name, img);
+          const imgBack = (DOUBLE_FACED_LAYOUTS.has(sc.layout) && sc.card_faces && sc.card_faces[1] && sc.card_faces[1].image_uris && sc.card_faces[1].image_uris.small) || '';
+          addCardToDeckPick('editor', sc.name, img, imgBack);
           fromScryfall++;
         }else{
           addCardToDeckPick('editor', n, ''); // aggiunta comunque, senza immagine: nessuna carta va persa
@@ -1759,7 +1776,7 @@
     if(!name){ toast('Dai un nome al mazzo.'); return; }
     const picks = deckEditorPicks.editor;
     if(picks.length === 0){ toast('Aggiungi almeno una carta al mazzo.'); return; }
-    const deckCards = picks.map(p => ({ name: p.name, imageUrl: p.imageUrl||'', qty: p.qty||1, isCommander: !!p.isCommander }));
+    const deckCards = picks.map(p => ({ name: p.name, imageUrl: p.imageUrl||'', imageUrlBack: p.imageUrlBack||'', qty: p.qty||1, isCommander: !!p.isCommander }));
     if(editingDeckId){
       const deck = savedGameDecks.find(d => d.id === editingDeckId);
       if(deck){ deck.name = name; deck.cards = deckCards; }
@@ -1792,7 +1809,7 @@
     const command = [];
     deck.cards.forEach(p=>{
       for(let i=0;i<(p.qty||1);i++){
-        const cardObj = { uid: uid(), name: p.name, imageUrl: p.imageUrl||'', tapped:false, isCommander: !!p.isCommander };
+        const cardObj = { uid: uid(), name: p.name, imageUrl: p.imageUrl||'', imageUrlBack: p.imageUrlBack||'', tapped:false, isCommander: !!p.isCommander };
         if(p.isCommander) command.push(cardObj);
         else library.push(cardObj);
       }
@@ -2123,7 +2140,9 @@
       </div>`;
     }
     const dblAction = zone === 'hand' ? 'data-dblclick="toBattlefield"' : '';
-    return `<div class="game-card hoverable ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}${zone==='hand'?' — doppio clic per giocarla in campo':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" data-img="${escapeAttr(c.imageUrl||'')}" ${dblAction} draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${actions}</div>`;
+    const flipBtn = c.imageUrlBack
+      ? `<button class="flip-btn game-card-flip" data-front="${escapeAttr(c.imageUrl)}" data-back="${escapeAttr(c.imageUrlBack)}" title="Mostra il retro">🔄</button>` : '';
+    return `<div class="game-card hoverable ${tappedClass} ${cmdClass} ${tokenClass} ${attackingClass} ${settleClass}" ${bg} title="${escapeAttr(c.name)}${c.isCommander?' (Comandante)':''}${zone==='hand'?' — doppio clic per giocarla in campo':''}" data-side="${side}" data-zone="${zone}" data-uid="${c.uid}" data-img="${escapeAttr(c.imageUrl||'')}" ${dblAction} draggable="true">${c.isToken && !c.imageUrl ? `<span class="token-label">${escapeHtml(c.name)}</span>` : ''}${flipBtn}${actions}</div>`;
   }
 
   function counterControl(side, key, icon, label){
@@ -2272,6 +2291,14 @@
             handleCardAction(side, zone, cuid, btn.dataset.act);
           });
         });
+        const flipBtn = cardEl.querySelector('.game-card-flip');
+        if(flipBtn){
+          flipBtn.addEventListener('click', (e)=>{
+            e.preventDefault();
+            e.stopPropagation();
+            toggleGameCardFace(flipBtn);
+          });
+        }
         cardEl.addEventListener('mouseenter', showPreview);
         cardEl.addEventListener('mousemove', movePreview);
         cardEl.addEventListener('mouseleave', hidePreview);
@@ -2460,6 +2487,8 @@
     if(!cards[idx].scryfallId && extra.scryfallId) cards[idx].scryfallId = extra.scryfallId;
     if(!cards[idx].scryfallUri && extra.scryfallUri) cards[idx].scryfallUri = extra.scryfallUri;
     if(!cards[idx].nameIt && extra.nameIt) cards[idx].nameIt = extra.nameIt;
+    if(!cards[idx].imageUrlBack && extra.imageUrlBack) cards[idx].imageUrlBack = extra.imageUrlBack;
+    if(!cards[idx].nameBack && extra.nameBack) cards[idx].nameBack = extra.nameBack;
   }
 
 
@@ -2786,7 +2815,10 @@
       const missingData = !c.imageUrl || (c.foil ? (c.priceFoilEur==null) : (c.priceEur==null));
       return `<div class="card-tile" data-id="${c.id}">
         <div class="rarity-corner" style="background:${m.color}"></div>
-        <a class="tile-thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+        <div class="tile-thumb-wrap">
+          <a class="tile-thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+          ${c.imageUrlBack ? `<button class="flip-btn" data-front="${escapeAttr(c.imageUrl)}" data-back="${escapeAttr(c.imageUrlBack)}" title="Mostra il retro${c.nameBack?' ('+escapeAttr(c.nameBack)+')':''}">🔄</button>` : ''}
+        </div>
         <div class="tile-name">${escapeHtml(c.name)}${c.foil?' <span class="foil-tag">FOIL</span>':''}</div>
         <div class="tile-set">${escapeHtml(c.setCode || c.setName || '—')} · ×${c.quantity||1} · ${escapeHtml(t.label)}</div>
         <div class="tile-bottom">
@@ -2810,7 +2842,10 @@
     const missingData = !c.imageUrl || (c.foil ? (c.priceFoilEur==null) : (c.priceEur==null));
     return `<div class="list-row" data-id="${c.id}">
         <div class="rarity-bar" style="background:${m.color}"></div>
-        <a class="thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+        <div class="thumb-wrap">
+          <a class="thumb hoverable" href="${scryfallCardLink(c)}" target="_blank" rel="noopener" title="Apri su Scryfall" data-img="${escapeAttr(c.imageUrl||'')}" ${bg}></a>
+          ${c.imageUrlBack ? `<button class="flip-btn" data-front="${escapeAttr(c.imageUrl)}" data-back="${escapeAttr(c.imageUrlBack)}" title="Mostra il retro${c.nameBack?' ('+escapeAttr(c.nameBack)+')':''}">🔄</button>` : ''}
+        </div>
         <div class="card-name">${escapeHtml(c.name)}${c.foil?'<span class="foil-tag">FOIL</span>':''}<span class="type-tag">${escapeHtml(t.label)}</span></div>
         <div class="set-cell">${escapeHtml(c.setCode || c.setName || '—')}</div>
         <div class="rarity-cell">${rarityBadge(c.rarity)}</div>
@@ -2825,7 +2860,43 @@
       </div>`;
   }
 
+  /* Gira la miniatura di una carta double-faced tra fronte e retro: cambia
+     sia lo sfondo visibile sia l'immagine usata dall'anteprima al passaggio
+     del mouse (che legge sempre data-img), così restano coerenti. */
+  function toggleCardFace(btn){
+    const wrap = btn.closest('.thumb-wrap, .tile-thumb-wrap');
+    if(!wrap) return;
+    const img = wrap.querySelector('.thumb, .tile-thumb');
+    if(!img) return;
+    const showingBack = img.dataset.showingBack === '1';
+    const next = showingBack ? btn.dataset.front : btn.dataset.back;
+    if(!next) return;
+    img.style.backgroundImage = `url('${next}')`;
+    img.dataset.img = next;
+    img.dataset.showingBack = showingBack ? '0' : '1';
+  }
+
+  /* Stessa idea, ma per le carte sul tavolo di gioco: qui lo sfondo è
+     direttamente sulla carta stessa, non su un elemento separato. */
+  function toggleGameCardFace(btn){
+    const card = btn.closest('.game-card');
+    if(!card) return;
+    const showingBack = card.dataset.showingBack === '1';
+    const next = showingBack ? btn.dataset.front : btn.dataset.back;
+    if(!next) return;
+    card.style.backgroundImage = `url('${next}')`;
+    card.dataset.img = next;
+    card.dataset.showingBack = showingBack ? '0' : '1';
+  }
+
   function attachRowEvents(){
+    $$('.flip-btn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCardFace(btn);
+      });
+    });
     $$('[data-action="edit"]').forEach(btn=>{
       btn.addEventListener('click', (e)=>{
         const id = e.target.closest('[data-id]').dataset.id;
@@ -3378,9 +3449,22 @@
     return map[lang] || ''; // 'en' e lingue non mappate restano vuote (comportamento di sempre)
   }
 
+  /* Layout Scryfall che indicano una carta stampata davvero su due facce
+     fisiche distinte (fronte e retro), a differenza di adventure/split che
+     pur avendo "card_faces" restano un'unica immagine stampata. Solo per
+     questi salviamo anche l'immagine del retro. */
+  const DOUBLE_FACED_LAYOUTS = new Set(['transform', 'modal_dfc', 'double_faced_token', 'reversible_card']);
+
   function scryfallToCardPatch(sc){
     const img = (sc.image_uris && sc.image_uris.normal) ||
                 (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
+    let imgBack = '';
+    let nameBack = '';
+    if(DOUBLE_FACED_LAYOUTS.has(sc.layout) && sc.card_faces && sc.card_faces.length >= 2){
+      const back = sc.card_faces[1];
+      imgBack = (back.image_uris && back.image_uris.normal) || '';
+      nameBack = back.name || '';
+    }
     let rarity = sc.rarity;
     if(!RARITY_META[rarity]) rarity = 'common';
     const typeLine = sc.type_line || (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].type_line) || '';
@@ -3391,6 +3475,8 @@
       rarity,
       type: detectTypeFromLine(typeLine),
       imageUrl: img,
+      imageUrlBack: imgBack,
+      nameBack: nameBack,
       scryfallId: sc.id,
       scryfallUri: sc.scryfall_uri || '',
       language: scryfallLangToField(sc.lang),
@@ -4098,6 +4184,13 @@
       const img = (sc.image_uris && sc.image_uris.normal) ||
                   (sc.card_faces && sc.card_faces[0] && sc.card_faces[0].image_uris && sc.card_faces[0].image_uris.normal) || '';
       if(img) c.imageUrl = img;
+    }
+    if(!c.imageUrlBack && DOUBLE_FACED_LAYOUTS.has(sc.layout) && sc.card_faces && sc.card_faces.length >= 2){
+      const back = sc.card_faces[1];
+      if(back.image_uris && back.image_uris.normal){
+        c.imageUrlBack = back.image_uris.normal;
+        c.nameBack = back.name || '';
+      }
     }
     if(!c.setName && sc.set_name) c.setName = sc.set_name;
     if(!c.setCode && sc.set) c.setCode = sc.set.toUpperCase();
