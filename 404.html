@@ -1485,6 +1485,7 @@
   let saveInFlight = false;
   let saveQueued = false;
   let retryTimer = null;
+  let lastKnownShardCount = 0;
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -2588,17 +2589,64 @@
      salva su un tuo progetto Firebase personale (funziona ovunque apri il
      file). Altrimenti usa il salvataggio integrato di Claude (funziona solo
      dentro Claude.ai). */
+  /* La collezione può superare il limite di ~1MB per documento di Firestore
+     (specialmente ora che ogni carta porta con sé molti più dati: nome
+     italiano, retro carta, colore, link...). Per non avere più un tetto
+     reale, il raccoglitore viene diviso in più documenti ("shard") più
+     piccoli, riuniti in lettura e ricalcolati automaticamente ad ogni
+     salvataggio. Il documento principale resta solo per i mazzi salvati e
+     per sapere quanti shard leggere. */
+  const FIRESTORE_MAX_DOC_BYTES = 900 * 1024; // margine di sicurezza sotto il limite reale (~1MB)
+
+  function chunkCardsForStorage(cardsArray){
+    const chunks = [];
+    let current = [];
+    let currentSize = 2;
+    for(const c of cardsArray){
+      const addSize = JSON.stringify(c).length + 1;
+      if(currentSize + addSize > FIRESTORE_MAX_DOC_BYTES && current.length > 0){
+        chunks.push(current);
+        current = [];
+        currentSize = 2;
+      }
+      current.push(c);
+      currentSize += addSize;
+    }
+    chunks.push(current); // anche se vuoto: garantisce sempre almeno uno shard
+    return chunks;
+  }
+
   async function loadCards(){
     updateSyncIndicator('saving', '☁ Caricamento del raccoglitore…');
     try{
       if(useFirebase){
-        const snap = await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc).get();
-        const raw = snap.exists ? snap.data() : {};
-        // formato compatto (nuovo, leggibile anche dal service worker in background)
-        // oppure formato "classico" con i campi diretti nel documento (dati più vecchi)
-        const data = (raw && typeof raw.data === 'string') ? JSON.parse(raw.data) : raw;
-        cards = Array.isArray(data.cards) ? data.cards : [];
-        savedGameDecks = Array.isArray(data.savedGameDecks) ? data.savedGameDecks : [];
+        const mainSnap = await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc).get();
+        const mainData = mainSnap.exists ? mainSnap.data() : {};
+        if(typeof mainData.data === 'string'){
+          // Formato precedente allo sharding: tutto in un unico campo "data".
+          // Letto per compatibilità — al primo salvataggio verrà convertito
+          // automaticamente al nuovo formato a più documenti.
+          const legacy = JSON.parse(mainData.data);
+          cards = Array.isArray(legacy.cards) ? legacy.cards : [];
+          savedGameDecks = Array.isArray(legacy.savedGameDecks) ? legacy.savedGameDecks : [];
+          lastKnownShardCount = 0;
+        }else{
+          const shardCount = mainData.shardCount || 0;
+          savedGameDecks = mainData.savedGameDecks ? JSON.parse(mainData.savedGameDecks) : [];
+          cards = [];
+          if(shardCount > 0){
+            const shardSnaps = await Promise.all(
+              Array.from({length: shardCount}, (_,i)=> db.collection(FIREBASE_DOC_PATH.collection).doc(`shard_${i}`).get())
+            );
+            shardSnaps.forEach(snap=>{
+              if(snap.exists){
+                const chunk = JSON.parse(snap.data().data || '[]');
+                cards.push(...chunk);
+              }
+            });
+          }
+          lastKnownShardCount = shardCount;
+        }
       }else{
         const res = await window.storage.get('collection', false);
         const data = res && res.value ? JSON.parse(res.value) : {};
@@ -2626,21 +2674,28 @@
     saveInFlight = true;
     updateSyncIndicator('saving');
     try{
-      const payload = JSON.stringify({ cards, savedGameDecks });
-      const sizeKB = Math.round(new Blob([payload]).size / 1024);
-      if(useFirebase && sizeKB > 950){
-        throw new Error(`Raccoglitore troppo grande per il documento cloud (${sizeKB} KB, limite di Firestore ~1024 KB). Contattami: serve dividerlo in più documenti.`);
-      }
       if(useFirebase){
-        // Formato compatto: tutto in un unico campo testuale "data". Rende il
-        // documento leggibile e scrivibile anche dal service worker con una
-        // semplice chiamata REST, senza dover includere l'intera libreria
-        // Firebase in background — è quello che permette all'aggiornamento
-        // prezzi di proseguire anche ad app chiusa (vedi più sotto).
-        await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc)
-          .set({ data: payload, updatedAt: new Date().toISOString() });
+        const shards = chunkCardsForStorage(cards);
+        await Promise.all(shards.map((chunk, i)=>
+          db.collection(FIREBASE_DOC_PATH.collection).doc(`shard_${i}`).set({ data: JSON.stringify(chunk) })
+        ));
+        await db.collection(FIREBASE_DOC_PATH.collection).doc(FIREBASE_DOC_PATH.doc).set({
+          shardCount: shards.length,
+          savedGameDecks: JSON.stringify(savedGameDecks),
+          updatedAt: new Date().toISOString()
+        });
+        // Ripulisce eventuali shard più vecchi rimasti orfani, se ora ne
+        // servono meno (es. dopo aver eliminato molte carte).
+        if(lastKnownShardCount > shards.length){
+          const deletions = [];
+          for(let i = shards.length; i < lastKnownShardCount; i++){
+            deletions.push(db.collection(FIREBASE_DOC_PATH.collection).doc(`shard_${i}`).delete());
+          }
+          await Promise.all(deletions);
+        }
+        lastKnownShardCount = shards.length;
       }else{
-        const res = await window.storage.set('collection', payload, false);
+        const res = await window.storage.set('collection', JSON.stringify({ cards, savedGameDecks }), false);
         if(!res) throw new Error('empty response');
       }
       storageAvailable = true;

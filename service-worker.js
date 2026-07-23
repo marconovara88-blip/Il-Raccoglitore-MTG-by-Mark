@@ -3,7 +3,7 @@
 // istantaneamente e resta utilizzabile offline. Le chiamate a Scryfall,
 // Firebase/Firestore e Cardmarket passano sempre dritte in rete: i dati e i
 // prezzi non vengono mai serviti da una cache vecchia.
-const CACHE_NAME = 'raccoglitore-mtg-shell-v48';
+const CACHE_NAME = 'raccoglitore-mtg-shell-v49';
 const SHELL_ASSETS = [
   './',
   './index.html',
@@ -69,15 +69,45 @@ self.addEventListener('fetch', (event) => {
    comunque ad aggiornare regolarmente mentre l'app resta aperta, semplicemente
    senza questa rete di sicurezza in più.
 
-   Per poter leggere e scrivere il documento anche da qui, senza includere
+   Per poter leggere e scrivere i documenti anche da qui, senza includere
    l'intera libreria Firebase in background, questi valori duplicano quelli
    già presenti in FIREBASE_CONFIG dentro index.html (una API key web di
    Firebase non è un segreto: la protezione reale sta nelle regole di
-   sicurezza di Firestore). */
+   sicurezza di Firestore).
+
+   La collezione può superare il limite di ~1MB per documento di Firestore,
+   quindi è divisa in più documenti ("shard"): questo codice li legge e li
+   riscrive tutti, restando coerente con lo stesso schema usato dall'app
+   principale (vedi loadCards/saveCards in index.html). */
 const FIREBASE_PROJECT_ID = 'marco-f6bcb';
 const FIREBASE_API_KEY = 'AIzaSyBDq_vqud0UFLseeseJy5HNt8ZR2sjeDUo';
-const FIRESTORE_DOC_URL =
-  `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/mtg_raccoglitore/collezione?key=${FIREBASE_API_KEY}`;
+const FIRESTORE_MAX_DOC_BYTES = 900 * 1024;
+
+function firestoreDocUrl(docId, updateMaskFields) {
+  let url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/mtg_raccoglitore/${docId}?key=${FIREBASE_API_KEY}`;
+  if (updateMaskFields) {
+    updateMaskFields.forEach((f) => { url += `&updateMask.fieldPaths=${encodeURIComponent(f)}`; });
+  }
+  return url;
+}
+
+function chunkCardsForStorageSW(cardsArray) {
+  const chunks = [];
+  let current = [];
+  let currentSize = 2;
+  for (const c of cardsArray) {
+    const addSize = JSON.stringify(c).length + 1;
+    if (currentSize + addSize > FIRESTORE_MAX_DOC_BYTES && current.length > 0) {
+      chunks.push(current);
+      current = [];
+      currentSize = 2;
+    }
+    current.push(c);
+    currentSize += addSize;
+  }
+  chunks.push(current);
+  return chunks;
+}
 
 self.addEventListener('sync', (event) => {
   if (event.tag === 'sync-refresh-prices') {
@@ -99,14 +129,35 @@ function detectTypeFromLineSW(typeLine) {
 }
 
 async function refreshPricesInBackground() {
-  const getRes = await fetch(FIRESTORE_DOC_URL);
-  if (!getRes.ok) return;
-  const doc = await getRes.json();
-  const raw = doc.fields && doc.fields.data && doc.fields.data.stringValue;
-  if (!raw) return;
+  const mainRes = await fetch(firestoreDocUrl('collezione'));
+  if (!mainRes.ok) return;
+  const mainDoc = await mainRes.json();
+  const fields = mainDoc.fields || {};
 
-  const state = JSON.parse(raw);
-  const cards = Array.isArray(state.cards) ? state.cards : [];
+  let cards = [];
+  let shardCount = 0;
+  let isLegacyFormat = false;
+
+  if (fields.data && fields.data.stringValue) {
+    // Formato precedente allo sharding: un unico documento con tutto dentro.
+    isLegacyFormat = true;
+    const legacy = JSON.parse(fields.data.stringValue);
+    cards = Array.isArray(legacy.cards) ? legacy.cards : [];
+  } else {
+    shardCount = (fields.shardCount && fields.shardCount.integerValue) ? parseInt(fields.shardCount.integerValue) : 0;
+    if (shardCount === 0) return;
+    const shardResults = await Promise.all(
+      Array.from({ length: shardCount }, (_, i) =>
+        fetch(firestoreDocUrl(`shard_${i}`)).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      )
+    );
+    shardResults.forEach((doc) => {
+      if (doc && doc.fields && doc.fields.data && doc.fields.data.stringValue) {
+        const chunk = JSON.parse(doc.fields.data.stringValue);
+        cards.push(...chunk);
+      }
+    });
+  }
 
   for (const c of cards) {
     try {
@@ -149,15 +200,51 @@ async function refreshPricesInBackground() {
     await new Promise((r) => setTimeout(r, 100));
   }
 
-  state.cards = cards;
-  await fetch(FIRESTORE_DOC_URL, {
+  if (isLegacyFormat) {
+    // Riscrive nello stesso formato precedente: l'app principale lo convertirà
+    // automaticamente al nuovo formato a shard al suo prossimo salvataggio.
+    await fetch(firestoreDocUrl('collezione'), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fields: {
+          data: { stringValue: JSON.stringify({ cards }) },
+          updatedAt: { stringValue: new Date().toISOString() }
+        }
+      })
+    });
+    return;
+  }
+
+  const newShards = chunkCardsForStorageSW(cards);
+  await Promise.all(newShards.map((chunk, i) =>
+    fetch(firestoreDocUrl(`shard_${i}`), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields: { data: { stringValue: JSON.stringify(chunk) } } })
+    })
+  ));
+
+  // Aggiorna il documento principale solo nei campi che riguardano questo
+  // aggiornamento (updateMask), così "savedGameDecks" non viene mai toccato
+  // né sovrascritto da qui.
+  await fetch(firestoreDocUrl('collezione', ['shardCount', 'updatedAt']), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       fields: {
-        data: { stringValue: JSON.stringify(state) },
+        shardCount: { integerValue: String(newShards.length) },
         updatedAt: { stringValue: new Date().toISOString() }
       }
     })
   });
+
+  // Ripulisce eventuali shard rimasti orfani se ora ne servono meno.
+  if (newShards.length < shardCount) {
+    const deletions = [];
+    for (let i = newShards.length; i < shardCount; i++) {
+      deletions.push(fetch(firestoreDocUrl(`shard_${i}`), { method: 'DELETE' }));
+    }
+    await Promise.all(deletions);
+  }
 }
