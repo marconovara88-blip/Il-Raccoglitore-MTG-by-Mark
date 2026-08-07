@@ -1207,6 +1207,8 @@ service cloud.firestore {
       <button class="ghost" id="btn-market-trends">📊 Andamento mercato</button>
       <button class="ghost" id="btn-share-collection">🔗 Condividi (sola lettura)</button>
       <button class="ghost" id="btn-open-trades">🎁 Scambi e desideri</button>
+      <button class="ghost" id="btn-toggle-music" title="Musica di sottofondo celtica (generata, nessun file da scaricare)">🎵 Musica</button>
+      <input type="range" id="music-volume" min="0" max="100" value="35" title="Volume musica" style="display:none; width:70px; vertical-align:middle;">
     </div>
     <div class="row">
       <span style="font-size:11px; color:var(--text-faint); margin-right:2px;">Vista:</span>
@@ -6297,6 +6299,89 @@ service cloud.firestore {
     $('#main').style.display = '';
   }
 
+  /* ---------------- Musica di sottofondo celtica (generata) ----------------
+     Nessun file audio: la melodia viene composta in tempo reale con la Web
+     Audio API — una scala di Re dorico (il modo tipico del folk irlandese e
+     scozzese, lo stesso di brani come "Scarborough Fair") più un bordone di
+     sottofondo simile a una cornamusa. Ogni nota è un oscillatore leggerissimo
+     creato e distrutto al volo: zero megabyte da scaricare, prestazioni
+     trascurabili anche su Android di fascia bassa, nessun problema di
+     copyright perché non riproduce nulla di esistente. Per policy del
+     browser può partire solo dopo un tocco/clic dell'utente, mai da sola. */
+  const CELTIC_SCALE = [293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33]; // Re Mi Fa Sol La Si Do Re (dorico)
+  const CELTIC_PHRASES = [
+    [0,2,3,4, 3,2,1,0, 2,4,5,4, 3,2,0,-1],
+    [4,5,6,7, 6,5,4,3, 2,3,4,2, 1,0,-1,-1],
+  ];
+  let audioCtx = null;
+  let musicPlaying = false;
+  let musicVolume = 0.35;
+  let musicTimer = null;
+  let droneNodes = null;
+
+  function ensureAudioCtx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function startDrone(){
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc1.type = 'sine'; osc1.frequency.value = 146.83; // Re basso: bordone tipo cornamusa
+    osc2.type = 'sine'; osc2.frequency.value = 220.00; // quinta sopra, tipico del drone celtico
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(musicVolume*0.16, audioCtx.currentTime + 1.5);
+    osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
+    osc1.start(); osc2.start();
+    droneNodes = {osc1, osc2, gain};
+  }
+  function stopDrone(){
+    if(!droneNodes || !audioCtx) return;
+    const {osc1, osc2, gain} = droneNodes;
+    gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+    osc1.stop(audioCtx.currentTime + 0.7);
+    osc2.stop(audioCtx.currentTime + 0.7);
+    droneNodes = null;
+  }
+
+  function playMelodyNote(freq, duration){
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle'; // timbro morbido, richiama un flauto/whistle
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain.gain.linearRampToValueAtTime(musicVolume*0.5, audioCtx.currentTime + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration*0.92);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function startCelticMusic(){
+    if(musicPlaying) return;
+    ensureAudioCtx();
+    musicPlaying = true;
+    startDrone();
+    let phraseIdx = 0, noteIdx = 0;
+    const noteLength = 0.32;
+    (function step(){
+      if(!musicPlaying) return;
+      const phrase = CELTIC_PHRASES[phraseIdx % CELTIC_PHRASES.length];
+      const idx = phrase[noteIdx];
+      if(idx >= 0) playMelodyNote(CELTIC_SCALE[idx], noteLength);
+      noteIdx++;
+      if(noteIdx >= phrase.length){ noteIdx = 0; phraseIdx++; }
+      musicTimer = setTimeout(step, noteLength*1000);
+    })();
+  }
+
+  function stopCelticMusic(){
+    musicPlaying = false;
+    clearTimeout(musicTimer);
+    stopDrone();
+  }
+
   function renderTradeListCurrent(){
     const wrap = $('#tradelist-current');
     const editBtn = $('#btn-tradelist-edit');
@@ -6412,6 +6497,21 @@ service cloud.firestore {
   $('#btn-back-from-game').addEventListener('click', closeGameSection);
 
   $('#btn-open-trades').addEventListener('click', openTradesSection);
+  $('#btn-toggle-music').addEventListener('click', ()=>{
+    if(musicPlaying){
+      stopCelticMusic();
+      $('#btn-toggle-music').textContent = '🎵 Musica';
+      $('#music-volume').style.display = 'none';
+    }else{
+      startCelticMusic();
+      $('#btn-toggle-music').textContent = '🔇 Musica';
+      $('#music-volume').style.display = 'inline-block';
+    }
+  });
+  $('#music-volume').addEventListener('input', (e)=>{
+    musicVolume = parseInt(e.target.value) / 100;
+    if(droneNodes && audioCtx) droneNodes.gain.gain.linearRampToValueAtTime(musicVolume*0.16, audioCtx.currentTime + 0.15);
+  });
   $('#btn-back-from-trades').addEventListener('click', closeTradesSection);
 
   $('#trades-tab-toggle').querySelectorAll('.view-btn').forEach(b=>{
