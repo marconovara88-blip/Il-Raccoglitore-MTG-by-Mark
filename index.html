@@ -1171,6 +1171,7 @@ service cloud.firestore {
       <input type="text" id="import-url" class="import-bar" placeholder="Incolla un link Scryfall, EDHREC, Moxfield o Archidekt…">
       <button class="primary" id="btn-import-url">Importa da link</button>
       <button class="ghost" id="btn-bulk-import">Importa lista/CSV</button>
+      <button class="ghost" id="btn-import-set">📦 Importa espansione intera</button>
       <button class="ghost" id="btn-scan-card">📷 Scansiona carta</button>
       <input type="file" accept="image/*" capture="environment" id="scan-input" style="display:none;">
       <button class="primary" id="btn-add-card">＋ Aggiungi carta</button>
@@ -1684,6 +1685,37 @@ service cloud.firestore {
         <button class="primary" id="btn-share-copy">Copia link</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="import-set-overlay">
+  <div class="modal" style="max-width:560px;">
+    <h2>📦 Importa espansione intera</h2>
+    <p class="bulk-help">
+      Cerca un'espansione (es. "Il Signore degli Anelli", "Tales of Middle-earth", "Lo Hobbit") e aggiungi in un colpo solo tutte le sue carte alla collezione, una copia ciascuna. Contano subito nel totale, nel valore in euro, nell'andamento mercato e in tutte le altre sezioni, esattamente come qualunque altra carta.
+    </p>
+    <div class="field">
+      <label>Nome espansione</label>
+      <input type="text" id="import-set-search" placeholder="Scrivi il nome dell'espansione…" autocomplete="off">
+    </div>
+    <div id="import-set-results" class="autocomplete-list-checkbox" style="max-height:260px; overflow-y:auto; display:none;"></div>
+
+    <div id="import-set-selected" style="display:none; margin-top:14px; padding:14px; background:var(--bg-elevated); border:1px solid var(--border); border-radius:10px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <img id="import-set-icon" src="" style="width:28px; height:28px; filter:invert(1);" onerror="this.style.display='none'">
+        <div>
+          <div id="import-set-name" style="font-weight:700; font-size:14px;"></div>
+          <div id="import-set-meta" style="font-size:12px; color:var(--text-dim);"></div>
+        </div>
+      </div>
+      <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-dim); margin-bottom:12px; cursor:pointer;">
+        <input type="checkbox" id="import-set-foil" style="width:16px; height:16px;">
+        Aggiungi come foil invece che normale
+      </label>
+      <button class="primary" id="btn-import-set-confirm" style="width:100%;">Importa tutte le carte</button>
+      <p id="import-set-progress" style="font-size:12.5px; color:var(--text-dim); margin-top:10px; min-height:18px;"></p>
+    </div>
+    <button class="ghost" id="btn-import-set-close" style="width:100%; margin-top:14px;">Chiudi</button>
   </div>
 </div>
 
@@ -5144,6 +5176,109 @@ service cloud.firestore {
     return m ? m[1] : null;
   }
 
+  /* ---------------- Importa espansione intera ----------------
+     Cerca un'espansione per nome (lista di Scryfall scaricata una sola
+     volta e filtrata localmente, per una ricerca istantanea) e aggiunge in
+     blocco tutte le sue carte alla collezione, riusando la stessa funzione
+     di aggiunta/unione già usata ovunque — quindi contano subito nel totale,
+     nel valore, nell'andamento mercato e in ogni altra sezione come
+     qualunque altra carta. */
+  let allScryfallSets = null;
+  let selectedImportSet = null;
+
+  async function ensureScryfallSetsLoaded(){
+    if(allScryfallSets) return allScryfallSets;
+    const res = await fetch('https://api.scryfall.com/sets');
+    const json = await res.json();
+    // Le espansioni di carte vere (non token, non promo isolati, non pannelli
+    // di arte) sono quelle più rilevanti per un'importazione in blocco.
+    allScryfallSets = (json.data || [])
+      .filter(s => s.card_count > 0)
+      .sort((a,b) => (b.released_at||'').localeCompare(a.released_at||''));
+    return allScryfallSets;
+  }
+
+  function renderImportSetResults(query){
+    const list = $('#import-set-results');
+    const q = query.trim().toLowerCase();
+    if(!q){ list.style.display = 'none'; list.innerHTML = ''; return; }
+    const matches = allScryfallSets.filter(s => s.name.toLowerCase().includes(q) || s.code.toLowerCase() === q).slice(0, 25);
+    if(matches.length === 0){
+      list.style.display = 'block';
+      list.innerHTML = `<div class="ac-row" style="cursor:default;"><span class="ac-row-name" style="color:var(--text-faint);">Nessuna espansione trovata.</span></div>`;
+      return;
+    }
+    list.style.display = 'block';
+    list.innerHTML = matches.map(s => `
+      <div class="ac-row" data-code="${escapeAttr(s.code)}">
+        <img src="${escapeAttr(s.icon_svg_uri||'')}" style="width:20px; height:20px; filter:invert(1);" onerror="this.style.display='none'">
+        <span class="ac-row-name">${escapeHtml(s.name)} <span style="color:var(--text-faint);">(${escapeHtml(s.code.toUpperCase())} · ${s.released_at ? s.released_at.slice(0,4) : '—'} · ${s.card_count} carte)</span></span>
+      </div>`).join('');
+    list.querySelectorAll('.ac-row[data-code]').forEach(row=>{
+      row.addEventListener('click', ()=>{
+        const set = allScryfallSets.find(s => s.code === row.dataset.code);
+        if(set) selectImportSet(set);
+      });
+    });
+  }
+
+  function selectImportSet(set){
+    selectedImportSet = set;
+    $('#import-set-search').value = set.name;
+    $('#import-set-results').style.display = 'none';
+    $('#import-set-icon').src = set.icon_svg_uri || '';
+    $('#import-set-name').textContent = set.name;
+    $('#import-set-meta').textContent = `${set.code.toUpperCase()} · ${set.released_at ? set.released_at.slice(0,4) : 'anno sconosciuto'} · ${set.card_count} carte`;
+    $('#import-set-progress').textContent = '';
+    $('#import-set-selected').style.display = 'block';
+  }
+
+  async function importWholeSet(){
+    if(!selectedImportSet) return;
+    const foil = $('#import-set-foil').checked;
+    const btn = $('#btn-import-set-confirm');
+    btn.disabled = true;
+    const progressEl = $('#import-set-progress');
+
+    try{
+      // Raccoglie tutte le carte dell'espansione, gestendo la paginazione di
+      // Scryfall (175 risultati per pagina sulle espansioni più grandi).
+      let allCards = [];
+      let url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent('e:'+selectedImportSet.code)}&unique=prints&order=set`;
+      while(url){
+        progressEl.textContent = `Recupero elenco carte… (${allCards.length}/${selectedImportSet.card_count})`;
+        const res = await fetch(url);
+        if(!res.ok) break;
+        const json = await res.json();
+        allCards = allCards.concat(json.data || []);
+        url = json.has_more ? json.next_page : null;
+        if(url) await new Promise(r => setTimeout(r, 80)); // rispetto dei limiti di Scryfall tra una pagina e l'altra
+      }
+
+      if(allCards.length === 0){
+        progressEl.textContent = 'Nessuna carta trovata per questa espansione.';
+        btn.disabled = false;
+        return;
+      }
+
+      let added = 0;
+      for(const sc of allCards){
+        await addCardFromScryfallObj(sc, 1, foil);
+        added++;
+        if(added % 10 === 0) progressEl.textContent = `Aggiunta carte alla collezione… (${added}/${allCards.length})`;
+      }
+
+      render();
+      scheduleSave();
+      progressEl.textContent = `✅ Importate ${added} carte da "${selectedImportSet.name}".`;
+      toast(`Importate ${added} carte da "${selectedImportSet.name}".`);
+    }catch(e){
+      progressEl.textContent = 'Errore durante l\'importazione: ' + (e && e.message ? e.message : e);
+    }finally{
+      btn.disabled = false;
+    }
+  }
+
   async function addCardFromScryfallObj(sc, qty, foil){
     const patch = scryfallToCardPatch(sc);
     patch.nameIt = (sc.lang === 'it' && sc.printed_name) ? sc.printed_name : '';
@@ -6585,6 +6720,29 @@ service cloud.firestore {
   $('#import-url').addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleUrlImport(); });
 
   $('#btn-bulk-import').addEventListener('click', ()=>{ $('#bulk-overlay').classList.add('show'); $('#bulk-progress').textContent=''; });
+
+  $('#btn-import-set').addEventListener('click', async ()=>{
+    selectedImportSet = null;
+    $('#import-set-search').value = '';
+    $('#import-set-results').style.display = 'none';
+    $('#import-set-selected').style.display = 'none';
+    $('#import-set-foil').checked = false;
+    $('#import-set-overlay').classList.add('show');
+    $('#import-set-search').placeholder = 'Carico l\'elenco delle espansioni…';
+    try{
+      await ensureScryfallSetsLoaded();
+      $('#import-set-search').placeholder = "Scrivi il nome dell'espansione…";
+    }catch(e){
+      $('#import-set-search').placeholder = 'Errore nel caricare le espansioni, riprova.';
+    }
+  });
+  $('#import-set-search').addEventListener('input', (e)=>{
+    selectedImportSet = null;
+    $('#import-set-selected').style.display = 'none';
+    if(allScryfallSets) renderImportSetResults(e.target.value);
+  });
+  $('#btn-import-set-confirm').addEventListener('click', importWholeSet);
+  $('#btn-import-set-close').addEventListener('click', ()=> $('#import-set-overlay').classList.remove('show'));
   $('#btn-cancel-bulk').addEventListener('click', ()=> $('#bulk-overlay').classList.remove('show'));
   $('#btn-run-bulk').addEventListener('click', runBulkImport);
   $('#toggle-scanapp-csv').addEventListener('click', ()=>{
