@@ -2108,12 +2108,14 @@ service cloud.firestore {
 
   const PRICE_BUCKET_META = {
     over50:   {label:"Oltre 50 €"},
-    b10to50:  {label:"10 – 50 €"},
-    b1to10:   {label:"1 – 10 €"},
-    under1:   {label:"Meno di 1 €"},
+    b40to50:  {label:"40 – 50 €"},
+    b30to40:  {label:"30 – 40 €"},
+    b20to30:  {label:"20 – 30 €"},
+    b10to20:  {label:"10 – 20 €"},
+    under10:  {label:"Meno di 10 €"},
     unknown:  {label:"Prezzo sconosciuto"}
   };
-  const PRICE_BUCKET_ORDER = ['over50','b10to50','b1to10','under1','unknown'];
+  const PRICE_BUCKET_ORDER = ['over50','b40to50','b30to40','b20to30','b10to20','under10','unknown'];
 
   function cardPrice(c){
     const p = c.foil ? (c.priceFoilEur ?? c.priceEur) : c.priceEur;
@@ -2124,9 +2126,11 @@ service cloud.firestore {
     const p = cardPrice(c);
     if(p == null) return 'unknown';
     if(p >= 50) return 'over50';
-    if(p >= 10) return 'b10to50';
-    if(p >= 1) return 'b1to10';
-    return 'under1';
+    if(p >= 40) return 'b40to50';
+    if(p >= 30) return 'b30to40';
+    if(p >= 20) return 'b20to30';
+    if(p >= 10) return 'b10to20';
+    return 'under10';
   }
 
   let cards = [];
@@ -4223,7 +4227,7 @@ service cloud.firestore {
     return displayMode === 'grid' ? gridHtml(items) : items.map(rowHtmlFor).join('');
   }
 
-  function groupedGeneric(list, groupKeyFn, labelFn, orderedKeys){
+  function groupedGeneric(list, groupKeyFn, labelFn, orderedKeys, sortFn){
     const groups = {};
     list.forEach(c=>{
       const key = groupKeyFn(c);
@@ -4233,10 +4237,21 @@ service cloud.firestore {
       ? orderedKeys.filter(k=> groups[k] && groups[k].length)
       : Object.keys(groups).sort((a,b)=>a.localeCompare(b,'it'));
     return keys.map(key=>{
-      const items = groups[key];
+      const items = sortFn ? groups[key].slice().sort(sortFn) : groups[key];
       const label = labelFn ? labelFn(key) : key;
       return `<div class="group-header">${escapeHtml(label)} <span class="count">${items.length} voci · ${totalCopies(items)} carte</span></div>${contentForItems(items)}`;
     }).join('');
+  }
+
+  /* Dentro ciascuna fascia di prezzo le carte vanno ordinate dalla più
+     costosa alla meno costosa (non alfabeticamente). */
+  function byPriceDesc(a, b){
+    const pa = cardPrice(a);
+    const pb = cardPrice(b);
+    if(pa == null && pb == null) return a.name.localeCompare(b.name,'it');
+    if(pa == null) return 1;
+    if(pb == null) return -1;
+    return pb - pa;
   }
 
   function render(){
@@ -4259,7 +4274,7 @@ service cloud.firestore {
     }else if(groupMode === 'color'){
       main.innerHTML = groupedGeneric(list, colorGroupKey, colorGroupLabel, COLOR_GROUP_ORDER);
     }else if(groupMode === 'price'){
-      main.innerHTML = groupedGeneric(list, priceBucketOf, k => (PRICE_BUCKET_META[k]||PRICE_BUCKET_META.unknown).label, PRICE_BUCKET_ORDER);
+      main.innerHTML = groupedGeneric(list, priceBucketOf, k => (PRICE_BUCKET_META[k]||PRICE_BUCKET_META.unknown).label, PRICE_BUCKET_ORDER, byPriceDesc);
     }else{
       main.innerHTML = displayMode === 'grid' ? gridHtml(list) : listHtml(list);
     }
